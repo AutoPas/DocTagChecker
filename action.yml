@@ -1,23 +1,27 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'doc-check'
+description: 'A tool to check if a PR touches code but not the corresponding documentation.'
+author: 'FG-TUM'
 
 # Add your action's branding here. This will appear on the GitHub Marketplace.
 branding:
-  icon: 'heart'
-  color: 'red'
+  icon: 'book'
+  color: 'blue'
 
 # Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
+  baseBranch:
+    description: 'The name of the reference branch for comparing changes.'
     required: true
-    default: '1000'
+    default: 'main'
+  userDocsDirs:
+    description: 'The paths to the directories where the user doc files are, relative to the repository root.'
+    required: true
+    default: 'docs'
 
 # Define your outputs here.
 outputs:
-  time:
-    description: 'Your output description here'
+  warnings:
+    description: 'All produced warnings.'
 
 runs:
   using: node20
