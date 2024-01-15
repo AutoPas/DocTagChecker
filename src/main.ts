@@ -7,6 +7,7 @@ import * as github from '@actions/github'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 export async function run(): Promise<void> {
+  core.info(`START`)
   try {
     // Input parsing
     // Get directories as arrays. Split at any amount of white space characters.
