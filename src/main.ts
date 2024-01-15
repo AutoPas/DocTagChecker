@@ -12,7 +12,7 @@ export async function run(): Promise<void> {
     // Input parsing
     // Get directories as arrays. Split at any amount of white space characters.
     const dirs: string[] = core.getInput('userDocsDirs').split(/\s+/)
-    core.info(`User doc directories: ${dirs}`)
+    core.info(`XXXXXXXXXXXX User doc directories: ${dirs}`)
     const baseBranch: string = core.getInput('baseBranch')
     core.info(`Base branch: ${baseBranch}`)
     // const ghToken: string = core.getInput('githubToken')
