@@ -9,6 +9,9 @@ branding:
 
 # Define your inputs here.
 inputs:
+  # githubToken:
+  #   description: 'GitHub token to authenticate the action to interact with the repository.'
+  #   required: true
   baseBranch:
     description: 'The name of the reference branch for comparing changes.'
     required: true
