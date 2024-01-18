@@ -52,6 +52,12 @@ function findFileByName(directory: string, fileName: string): string | null {
   }
 }
 
+/**
+ * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
+ * @param userdocs - An array of paths to documentation files.
+ * @param changes - An array of paths to files that have been changed.
+ * @returns An exit code: 0 if no errors were found, 1 if errors were found.
+ */
 function checkDocumentation(userdocs: string[], changes: string[]): number {
   // Flag for if any errors are found
   let exitCode = 0
