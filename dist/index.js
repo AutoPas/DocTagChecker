@@ -28949,29 +28949,21 @@ async function run() {
         // Input parsing
         // Get directories as arrays. Split at any amount of white space characters.
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
-        core.info(`XXXXXXXXXXXX User doc directories: ${dirs}`);
+        core.info(`User doc directories: ${dirs}`);
         const baseBranch = core.getInput('baseBranch');
         core.info(`Base branch: ${baseBranch}`);
         // const ghToken: string = core.getInput('githubToken')
-        core.info(`FOOO 1`);
+        core.info('--------------------------------');
+        core.info(`${process.env}`);
+        core.info('--------------------------------');
         const ghToken = process.env.GITHUB_TOKEN;
-        core.info(`FOOO 2`);
         const owner = (process.env.GITHUB_REPOSITORY ?? '').split('/')[0];
-        core.info(`FOOO 3`);
         const repo = (process.env.GITHUB_REPOSITORY ?? '').split('/')[1];
-        core.info(`FOOO 4`);
         core.info(`process.env.GITHUB_REPOSITORY: ${process.env.GITHUB_REPOSITORY}`);
-        core.info(`FOOO 5`);
         const pull_number = parseInt(process.env.GITHUB_PULL_REQUEST_NUMBER ?? '-1', 10);
-        core.info(`FOOO 6`);
         core.info(`process.env.GITHUB_PULL_REQUEST_NUMBER: ${process.env.GITHUB_PULL_REQUEST_NUMBER}`);
-        core.info(`FOOO 7`);
         core.info(`process.env: ${process.env}`);
-        core.info(`FOOO 8`);
-        core.info(`process.env: ${process.env}`);
-        core.info(`FOOO 9`);
-        core.info(`process.env: ${process.env}`);
-        core.info(`FOOO 10`);
+        console.log(process.env);
         if (ghToken === undefined) {
             core.info(`ghToken === undefined. Aborting`);
             return;
