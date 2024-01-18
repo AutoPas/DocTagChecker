@@ -28950,19 +28950,12 @@ async function run() {
         // Get directories as arrays. Split at any amount of white space characters.
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
         core.info(`User doc directories: ${dirs}`);
-        const baseBranch = core.getInput('baseBranch');
+        const baseBranch = process.env.GITHUB_BASE_REF;
         core.info(`Base branch: ${baseBranch}`);
-        // const ghToken: string = core.getInput('githubToken')
-        core.info('--------------------------------');
-        core.info(`${process.env}`);
-        core.info('--------------------------------');
-        const ghToken = process.env.GITHUB_TOKEN;
-        const owner = (process.env.GITHUB_REPOSITORY ?? '').split('/')[0];
-        const repo = (process.env.GITHUB_REPOSITORY ?? '').split('/')[1];
-        core.info(`process.env.GITHUB_REPOSITORY: ${process.env.GITHUB_REPOSITORY}`);
-        const pull_number = parseInt(process.env.GITHUB_PULL_REQUEST_NUMBER ?? '-1', 10);
-        core.info(`process.env.GITHUB_PULL_REQUEST_NUMBER: ${process.env.GITHUB_PULL_REQUEST_NUMBER}`);
-        core.info(`process.env: ${process.env}`);
+        const ghToken = core.getInput('githubToken');
+        const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
+        const pull_number = parseInt((process.env.GITHUB_REF_NAME ?? '').split('/')[0], 10);
+        core.info(`pull_number: ${pull_number}`);
         console.log(process.env);
         if (ghToken === undefined) {
             core.info(`ghToken === undefined. Aborting`);
@@ -28976,6 +28969,8 @@ async function run() {
             repo,
             pull_number
         });
+        console.log('------------------------');
+        console.log(response);
         // Extract file names from the response
         const changedFiles = response.data.map(file => file.filename);
         core.info(`changed files: ${changedFiles}`);
