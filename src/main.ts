@@ -52,11 +52,7 @@ function findFileByName(directory: string, fileName: string): string | null {
   }
 }
 
-function checkDocumentation(
-  baseBranch: string,
-  userdocs: string[],
-  changes: string[]
-): number {
+function checkDocumentation(userdocs: string[], changes: string[]): number {
   // Flag for if any errors are found
   let exitCode = 0
 
@@ -123,14 +119,12 @@ export async function run(): Promise<void> {
     // Input parsing
     // Get directories as arrays. Split at any amount of white space characters.
     const dirs = core.getInput('userDocsDirs').split(/\s+/)
-    const baseBranch = process.env.GITHUB_BASE_REF!
     const ghToken = core.getInput('githubToken')
     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
     const pull_number = parseInt(
       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
       10
     )
-    core.info(`Base branch: ${baseBranch}`)
     core.info(`User doc directories: ${dirs}`)
     // Get list of doc files
     const docFiles = dirs.flatMap(d =>
@@ -154,7 +148,7 @@ export async function run(): Promise<void> {
     const changedFiles = response.data.map(file => file.filename)
     core.info(`changed files: ${changedFiles}`)
 
-    const exitCode = checkDocumentation(baseBranch, docFiles, changedFiles)
+    const exitCode = checkDocumentation(docFiles, changedFiles)
 
     // Set outputs for other workflow steps to use
     // TODO: use exitCode
