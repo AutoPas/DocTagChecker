@@ -20,9 +20,10 @@ function findFileByName(directory: string, fileName: string): string | null {
     // Go over everything in the current directory
     for (const item of items) {
       const itemPath = path.join(currentDir, item)
+      const itemBasename = path.basename(item)
 
       // Check if the current item (file or dir) is what we are looking for
-      if (item === fileName) {
+      if (itemBasename === fileName) {
         // File found in the current directory
         return itemPath
       }
