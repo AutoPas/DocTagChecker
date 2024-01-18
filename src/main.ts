@@ -22,7 +22,7 @@ function findFileByName(directory: string, fileName: string): string | null {
       const itemPath = path.join(currentDir, item)
 
       // Check if the current item (file or dir) is what we are looking for
-      if (item=== path.basename(fileName)) {
+      if (item === path.basename(fileName)) {
         // File found in the current directory
         return itemPath
       }
@@ -75,7 +75,7 @@ function checkDocumentation(
         .match(/[\S]+\/(?!\S)/g) || []
     )
 
-    const docfileHasChanges = changes.includes(path.basename(docfile))
+    const docfileHasChanges = changesBasenames.includes(path.basename(docfile))
     let unknownTags: string[] = []
     // append the content of all directories to the tags
     for (const tag of [...directoryTags]) {

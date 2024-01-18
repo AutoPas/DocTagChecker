@@ -28957,7 +28957,7 @@ function findFileByName(directory, fileName) {
         for (const item of items) {
             const itemPath = path.join(currentDir, item);
             // Check if the current item (file or dir) is what we are looking for
-            if (item === fileName) {
+            if (item === path.basename(fileName)) {
                 // File found in the current directory
                 return itemPath;
             }
@@ -28997,7 +28997,7 @@ function checkDocumentation(baseBranch, userdocs, changes) {
         const directoryTags = Array.from(fileContent
             .split(/Related Files and Folders/i)[1]
             .match(/[\S]+\/(?!\S)/g) || []);
-        const docfileHasChanges = changes.includes(path.basename(docfile));
+        const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
         let unknownTags = [];
         // append the content of all directories to the tags
         for (const tag of [...directoryTags]) {
@@ -29017,7 +29017,7 @@ function checkDocumentation(baseBranch, userdocs, changes) {
                 exitCode = 1;
             }
             // If any tag appears in the changes, the doc file also has to be in the changes
-            if (!(docfileHasChanges && changesBasenames.includes(tag))) {
+            if (!docfileHasChanges && changesBasenames.includes(tag)) {
                 console.log(`${tag} has been changed, but ${docfile} is unchanged. Check that the documentation is still up to date!`);
                 exitCode = 1;
             }
