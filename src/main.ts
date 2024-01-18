@@ -75,7 +75,7 @@ function checkDocumentation(
         .match(/[\S]+\/(?!\S)/g) || []
     )
 
-    const docfileHasChanges = changes.includes(docfile)
+    const docfileHasChanges = changes.includes(path.basename(docfile))
     let unknownTags: string[] = []
     // append the content of all directories to the tags
     for (const tag of [...directoryTags]) {
@@ -133,7 +133,9 @@ export async function run(): Promise<void> {
     core.info(`Base branch: ${baseBranch}`)
     core.info(`User doc directories: ${dirs}`)
     // Get list of doc files
-    const docFiles = dirs.flatMap(d => fs.readdirSync(d))
+    const docFiles = dirs.flatMap(d =>
+      fs.readdirSync(d).map(f => path.join(d, f))
+    )
     core.info(`User doc files: ${docFiles}`)
     if (ghToken === undefined) {
       core.warning(`ghToken === undefined. Aborting`)
