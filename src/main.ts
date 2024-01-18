@@ -28,7 +28,9 @@ export async function run(): Promise<void> {
     core.info(`FOOO 5`)
     const pull_number = parseInt(process.env.GITHUB_PULL_REQUEST_NUMBER, 10)
     core.info(`FOOO 6`)
-    core.info(`process.env.GITHUB_PULL_REQUEST_NUMBER: ${process.env.GITHUB_PULL_REQUEST_NUMBER}`)
+    core.info(
+      `process.env.GITHUB_PULL_REQUEST_NUMBER: ${process.env.GITHUB_PULL_REQUEST_NUMBER}`
+    )
     core.info(`FOOO 7`)
     core.info(`process.env: ${process.env}`)
     core.info(`FOOO 8`)
@@ -42,10 +44,10 @@ export async function run(): Promise<void> {
     const response = await octokit.rest.pulls.listFiles({
       owner,
       repo,
-      pull_number,
+      pull_number
     })
     // Extract file names from the response
-    const changedFiles = response.data.map((file) => file.filename);
+    const changedFiles = response.data.map(file => file.filename)
     core.info(`changed files: ${changedFiles}`)
 
     // Set outputs for other workflow steps to use
