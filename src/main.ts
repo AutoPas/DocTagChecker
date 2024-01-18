@@ -20,10 +20,9 @@ function findFileByName(directory: string, fileName: string): string | null {
     // Go over everything in the current directory
     for (const item of items) {
       const itemPath = path.join(currentDir, item)
-      const itemBasename = path.basename(item)
 
       // Check if the current item (file or dir) is what we are looking for
-      if (itemBasename === fileName) {
+      if (item=== path.basename(fileName)) {
         // File found in the current directory
         return itemPath
       }
@@ -96,7 +95,7 @@ function checkDocumentation(
         exitCode = 1
       }
       // If any tag appears in the changes, the doc file also has to be in the changes
-      if (!(docfileHasChanges && changesBasenames.includes(tag))) {
+      if (!docfileHasChanges && changesBasenames.includes(tag)) {
         console.log(
           `${tag} has been changed, but ${docfile} is unchanged. Check that the documentation is still up to date!`
         )
