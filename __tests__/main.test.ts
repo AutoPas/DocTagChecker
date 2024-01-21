@@ -36,8 +36,8 @@ describe('action', () => {
       switch (name) {
         case 'userDocsDirs':
           return 'docs/user/ foo bar/baz'
-        case 'baseBranch':
-          return 'leBase'
+        case 'githubToken':
+          return 'leToken'
         default:
           return ''
       }
