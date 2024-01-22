@@ -31,7 +31,9 @@ function checkDocumentation(
         .split(/Related Files and Folders/i)[1]
         .match(/[\S]+\/(?!\S)/g) || []
     )
-    console.log(`Found tags: ${docfile} | ${fileTags} | ${directoryTags}`)
+    core.debug(
+      `Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`
+    )
 
     const docfileHasChanges = changesBasenames.includes(path.basename(docfile))
     const unknownTagsLocal: string[] = []
@@ -60,14 +62,14 @@ function checkDocumentation(
 
     // If any unknownTags were found store it to the return map
     if (unknownTagsLocal.length !== 0) {
-      console.log(
+      core.debug(
         `In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`
       )
       unknownTags.set(`${docfile}`, unknownTagsLocal)
     }
     // If any changes in related files were found store it to the return map
     if (unchangedDocLocal.length !== 0) {
-      console.log(
+      core.debug(
         `${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`
       )
       unchangedDoc.set(`${docfile}`, unchangedDocLocal)
@@ -80,6 +82,8 @@ function checkDocumentation(
 /**
  * Remove last comment made by this action to avoid spam.
  * If no previous comment can be found do nothing.
+ * @param ghToken GitHub Token
+ * @param header Header to identify the last bot message.
  */
 async function deleteLastComment(
   ghToken: string,
