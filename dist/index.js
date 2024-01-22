@@ -29053,6 +29053,7 @@ function buildMessage(unchangedDoc, unknownTags, header) {
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
         });
     };
+    console.log(3);
     // Add content for unknown tags
     if (unknownTags.size !== 0) {
         message += `## Unknown Tags
@@ -29064,6 +29065,7 @@ The following tags could not be found in the latest revision:
         });
         message += '\n';
     }
+    console.log(4);
     // Add content for unchanged documentation
     if (unchangedDoc.size !== 0) {
         message += `## Unchanged Documentation
@@ -29134,7 +29136,9 @@ async function run() {
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`changed files: ${changedFiles}`);
         // ---------------- Check docs and tags ----------------
+        console.log(1);
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles);
+        console.log(2);
         // ---------------- Process the analysis ----------------
         // Common header to identify this bot's messages.
         const header = '# DocTagChecker\n\n';
@@ -29151,6 +29155,7 @@ async function run() {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
             // Add a new comment with the warnings to the PR.
             const message = buildMessage(unchangedDoc, unknownTags, header);
+            console.log(5);
             await postMessage(ghToken, message);
         }
     }
