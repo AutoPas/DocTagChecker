@@ -29048,8 +29048,12 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     let message = header;
     // Local helper function turning a list of tags into named urls to changes.
     let tagsToUrls = (tagList) => {
+        console.log(`WWWWWWWWWWWWWWWw TAGS TO URLs WWWWWWWWWWWWWWWw`);
         return tagList.map((tag) => {
+            console.log(tag);
             const filePath = (0, utils_1.findFileByName)('.', tag);
+            console.log(filePath);
+            console.log((0, utils_1.getUrlToChanges)(filePath));
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
         });
     };
@@ -29061,7 +29065,10 @@ The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:-------:|:------------:|\n`;
         unknownTags.forEach((tags, docfile) => {
-            message += `| [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) | ${tagsToUrls(tags)} |\n`;
+            console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`);
+            const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
+            console.log(docfileLink);
+            message += `| ${docfileLink} | ${tagsToUrls(tags)} |\n`;
         });
         message += '\n';
     }

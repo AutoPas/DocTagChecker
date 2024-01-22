@@ -144,8 +144,12 @@ function buildMessage(
 
   // Local helper function turning a list of tags into named urls to changes.
   let tagsToUrls = (tagList: string[]): string[] => {
+    console.log(`WWWWWWWWWWWWWWWw TAGS TO URLs WWWWWWWWWWWWWWWw`)
     return tagList.map((tag: string): string => {
+      console.log(tag)
       const filePath: string = findFileByName('.', tag)!
+      console.log(filePath)
+      console.log(getUrlToChanges(filePath))
       return `[${tag}](${getUrlToChanges(filePath)})`
     })
   }
@@ -159,9 +163,12 @@ The following tags could not be found in the latest revision:
 |:-------:|:------------:|\n`
 
     unknownTags.forEach((tags, docfile) => {
-      message += `| [${path.basename(docfile)}](${getUrlToFile(
+      console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`)
+      const docfileLink = `[${path.basename(docfile)}](${getUrlToFile(
         docfile
-      )}) | ${tagsToUrls(tags)} |\n`
+      )})`
+      console.log(docfileLink)
+      message += `| ${docfileLink} | ${tagsToUrls(tags)} |\n`
     })
     message += '\n'
   }
