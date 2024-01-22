@@ -11,7 +11,7 @@ import { findFileByName } from './utils'
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
 function checkDocumentation(userdocs: string[], changes: string[]): string {
-  let output= '' 
+  let output = ''
 
   const changesBasenames = changes.map(f => path.basename(f))
 
@@ -71,7 +71,7 @@ export async function run(): Promise<void> {
     const dirs = core.getInput('userDocsDirs').split(/\s+/)
     const ghToken = core.getInput('githubToken')
     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
-    const prNumber = parseInt(
+    const pull_number = parseInt(
       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
       10
     )
@@ -92,7 +92,7 @@ export async function run(): Promise<void> {
     const response = await octokit.rest.pulls.listFiles({
       owner,
       repo,
-      prNumber
+      pull_number
     })
     // Extract file names from the response
     const changedFiles = response.data.map(file => file.filename)
@@ -109,11 +109,10 @@ export async function run(): Promise<void> {
       await octokit.rest.issues.createComment({
         owner: owner,
         repo: repo,
-        issue_number: prNumber,
+        issue_number: pull_number,
         body: errMsgs
-      });
+      })
     }
-
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) {
