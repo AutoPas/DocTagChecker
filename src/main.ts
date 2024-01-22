@@ -168,7 +168,8 @@ The following tags could not be found in the latest revision:
         docfile
       )})`
       console.log(docfileLink)
-      message += `| ${docfileLink} | ${tagsToUrls(tags)} |\n`
+      // These tags are unknown so don't try to create links for them.
+      message += `| ${docfileLink} | ${tags} |\n`
     })
     message += '\n'
   }

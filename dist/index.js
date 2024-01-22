@@ -29068,7 +29068,8 @@ The following tags could not be found in the latest revision:
             console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`);
             const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
             console.log(docfileLink);
-            message += `| ${docfileLink} | ${tagsToUrls(tags)} |\n`;
+            // These tags are unknown so don't try to create links for them.
+            message += `| ${docfileLink} | ${tags} |\n`;
         });
         message += '\n';
     }
