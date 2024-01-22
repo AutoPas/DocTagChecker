@@ -71,7 +71,7 @@ export async function run(): Promise<void> {
     const dirs = core.getInput('userDocsDirs').split(/\s+/)
     const ghToken = core.getInput('githubToken')
     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
-    const pull_number = parseInt(
+    const prNumber = parseInt(
       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
       10
     )
@@ -90,10 +90,17 @@ export async function run(): Promise<void> {
 
     // Get the list of changed files in the pull request
     const response = await octokit.rest.pulls.listFiles({
-      owner,
-      repo,
-      pull_number
+      owner: owner,
+      repo: repo,
+      pull_number: prNumber
     })
+
+    // TODO: TEST THIS
+    // Filter out files with only whitespace changes
+    // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
+    //   return file.status !== 'modified' && file.status !== 'added';
+    // });
+
     // Extract file names from the response
     const changedFiles = response.data.map(file => file.filename)
     core.info(`changed files: ${changedFiles}`)
@@ -109,7 +116,7 @@ export async function run(): Promise<void> {
       await octokit.rest.issues.createComment({
         owner: owner,
         repo: repo,
-        issue_number: pull_number,
+        issue_number: prNumber,
         body: errMsgs
       })
     }

@@ -28998,7 +28998,7 @@ async function run() {
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
         const ghToken = core.getInput('githubToken');
         const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
-        const pull_number = parseInt((process.env.GITHUB_REF_NAME ?? '').split('/')[0], 10);
+        const prNumber = parseInt((process.env.GITHUB_REF_NAME ?? '').split('/')[0], 10);
         core.info(`User doc directories: ${dirs}`);
         // Get list of doc files
         const docFiles = dirs.flatMap(d => fs.readdirSync(d).map(f => path.join(d, f)));
@@ -29011,10 +29011,15 @@ async function run() {
         const octokit = github.getOctokit(ghToken);
         // Get the list of changed files in the pull request
         const response = await octokit.rest.pulls.listFiles({
-            owner,
-            repo,
-            pull_number
+            owner: owner,
+            repo: repo,
+            pull_number: prNumber
         });
+        // TODO: TEST THIS
+        // Filter out files with only whitespace changes
+        // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
+        //   return file.status !== 'modified' && file.status !== 'added';
+        // });
         // Extract file names from the response
         const changedFiles = response.data.map(file => file.filename);
         core.info(`changed files: ${changedFiles}`);
@@ -29029,7 +29034,7 @@ async function run() {
             await octokit.rest.issues.createComment({
                 owner: owner,
                 repo: repo,
-                issue_number: pull_number,
+                issue_number: prNumber,
                 body: errMsgs
             });
         }
