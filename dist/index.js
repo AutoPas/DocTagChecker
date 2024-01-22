@@ -28959,7 +28959,7 @@ function checkDocumentation(userdocs, changes) {
         const directoryTags = Array.from(fileContent
             .split(/Related Files and Folders/i)[1]
             .match(/[\S]+\/(?!\S)/g) || []);
-        console.log(`Found tags: ${docfile} | ${fileTags} | ${directoryTags}`);
+        core.debug(`Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
         const unknownTagsLocal = [];
         const unchangedDocLocal = [];
@@ -28986,12 +28986,12 @@ function checkDocumentation(userdocs, changes) {
         }
         // If any unknownTags were found store it to the return map
         if (unknownTagsLocal.length !== 0) {
-            console.log(`In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`);
+            core.debug(`In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`);
             unknownTags.set(`${docfile}`, unknownTagsLocal);
         }
         // If any changes in related files were found store it to the return map
         if (unchangedDocLocal.length !== 0) {
-            console.log(`${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`);
+            core.debug(`${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`);
             unchangedDoc.set(`${docfile}`, unchangedDocLocal);
         }
     }
@@ -29000,6 +29000,8 @@ function checkDocumentation(userdocs, changes) {
 /**
  * Remove last comment made by this action to avoid spam.
  * If no previous comment can be found do nothing.
+ * @param ghToken GitHub Token
+ * @param header Header to identify the last bot message.
  */
 async function deleteLastComment(ghToken, header) {
     const octokit = github.getOctokit(ghToken);
@@ -29028,6 +29030,41 @@ async function deleteLastComment(ghToken, header) {
             comment_id: lastCommentId
         });
     }
+}
+/**
+ * Constructs the comment message from the given analysis results.
+ * @param unchangedDoc Map<docfile, tags>.
+ * @param unknownTags Map<docfile, tags>.
+ * @param header Header for the message.
+ * @return Message as string.
+ */
+function buildMessage(unchangedDoc, unknownTags, header) {
+    // If there is nothing to report on, the message stays empty
+    if (unchangedDoc.size === 0 && unknownTags.size === 0) {
+        return '';
+    }
+    // Message starts with the header
+    let message = header;
+    // Add content for unknown tags
+    if (unknownTags.size !== 0) {
+        message += `## Unknown Tags
+The following tags could not be found in the latest revision:
+| DocFile | Unknown Tags |
+|:-------:|:------------:|\n`;
+        unknownTags.forEach((tags, docfile) => {
+            message += `| ${path.basename(docfile)} | ${tags} |\n`;
+        });
+        message += '\n';
+    }
+    // Add content for unchanged documentation
+    if (unchangedDoc.size !== 0) {
+        message += `## Unchanged Documentation
+The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`;
+        unchangedDoc.forEach((tags, docfile) => {
+            message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
+        });
+    }
+    return message;
 }
 /**
  * The main function for the action.
@@ -29071,28 +29108,10 @@ async function run() {
         }
         else {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
-            // construct the message
             const header = '# DocTagChecker\n\n';
-            let message = header;
-            if (unknownTags.size !== 0) {
-                message += `## Unknown Tags
-The following tags could not be found in the latest revision:
-| DocFile | Unknown Tags |
-|:-------:|:------------:|\n`;
-                unknownTags.forEach((tags, docfile) => {
-                    message += `| ${path.basename(docfile)} | ${tags} |\n`;
-                });
-                message += '\n';
-            }
-            if (unchangedDoc.size !== 0) {
-                message += `## Unchanged Documentation
-The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`;
-                unchangedDoc.forEach((tags, docfile) => {
-                    message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
-                });
-            }
+            const message = buildMessage(unchangedDoc, unknownTags, header);
             await deleteLastComment(ghToken, header);
-            // add a comment with the warnings to the PR
+            // Add a new comment with the warnings to the PR
             await octokit.rest.issues.createComment({
                 owner: github.context.repo.owner,
                 repo: github.context.repo.repo,

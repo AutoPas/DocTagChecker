@@ -122,6 +122,51 @@ async function deleteLastComment(
 }
 
 /**
+ * Constructs the comment message from the given analysis results.
+ * @param unchangedDoc Map<docfile, tags>.
+ * @param unknownTags Map<docfile, tags>.
+ * @param header Header for the message.
+ * @return Message as string.
+ */
+function buildMessage(
+  unchangedDoc: Map<string, string[]>,
+  unknownTags: Map<string, string[]>,
+  header: string
+): string {
+  // If there is nothing to report on, the message stays empty
+  if (unchangedDoc.size === 0 && unknownTags.size === 0) {
+    return ''
+  }
+
+  // Message starts with the header
+  let message = header
+
+  // Add content for unknown tags
+  if (unknownTags.size !== 0) {
+    message += `## Unknown Tags
+The following tags could not be found in the latest revision:
+| DocFile | Unknown Tags |
+|:-------:|:------------:|\n`
+
+    unknownTags.forEach((tags, docfile) => {
+      message += `| ${path.basename(docfile)} | ${tags} |\n`
+    })
+    message += '\n'
+  }
+
+  // Add content for unchanged documentation
+  if (unchangedDoc.size !== 0) {
+    message += `## Unchanged Documentation
+The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`
+    unchangedDoc.forEach((tags, docfile) => {
+      message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`
+    })
+  }
+
+  return message
+}
+
+/**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
@@ -175,33 +220,11 @@ export async function run(): Promise<void> {
       core.setOutput('warnings', 'NO WARNINGS')
     } else {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
-      // construct the message
       const header = '# DocTagChecker\n\n'
-      let message = header
-
-      if (unknownTags.size !== 0) {
-        message += `## Unknown Tags
-The following tags could not be found in the latest revision:
-| DocFile | Unknown Tags |
-|:-------:|:------------:|\n`
-
-        unknownTags.forEach((tags, docfile) => {
-          message += `| ${path.basename(docfile)} | ${tags} |\n`
-        })
-        message += '\n'
-      }
-
-      if (unchangedDoc.size !== 0) {
-        message += `## Unchanged Documentation
-The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`
-        unchangedDoc.forEach((tags, docfile) => {
-          message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`
-        })
-      }
-
+      const message = buildMessage(unchangedDoc, unknownTags, header)
       await deleteLastComment(ghToken, header)
 
-      // add a comment with the warnings to the PR
+      // Add a new comment with the warnings to the PR
       await octokit.rest.issues.createComment({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
