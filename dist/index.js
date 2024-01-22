@@ -29046,7 +29046,8 @@ async function run() {
         else {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
             // construct the message
-            let message = '# DocTagChecker\n\n';
+            const header = '# DocTagChecker\n\n';
+            let message = header;
             if (unknownTags.size !== 0) {
                 message += `## Unknown Tags
 The following tags could not be found in the latest revision:
@@ -29064,7 +29065,7 @@ The following doc files are unchanged, but some related sources were changed. Ma
                     message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
                 });
             }
-            // remove the last comment to avoid spam
+            // Remove the last comment to avoid spam
             // Retrieve the comments made by the action using the GitHub API
             const commentsResponse = await octokit.rest.issues.listComments({
                 owner: github.context.repo.owner,
@@ -29073,14 +29074,25 @@ The following doc files are unchanged, but some related sources were changed. Ma
             });
             console.log('------------------------------- octokit.rest.issues.listComments -------------------------------');
             console.log(commentsResponse);
-            // Find the ID of the last comment made by the action
-            const lastCommentId = commentsResponse.data[commentsResponse.data.length - 1].id;
-            // Delete the last comment using the GitHub API
-            await octokit.rest.issues.deleteComment({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                comment_id: lastCommentId
-            });
+            // Find the last comment added by the action based on a specific marker or signature
+            const lastCommentId = (() => {
+                const expectedUser = 'github-actions[bot]';
+                for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
+                    if (commentsResponse.data[i].user.login === expectedUser &&
+                        commentsResponse.data[i].body.includes(header)) {
+                        return commentsResponse.data[i].id;
+                    }
+                }
+                return -1;
+            })();
+            // If we found a previous comment by the bot delete it
+            if (lastCommentId !== -1) {
+                await octokit.rest.issues.deleteComment({
+                    owner: github.context.repo.owner,
+                    repo: github.context.repo.repo,
+                    comment_id: lastCommentId
+                });
+            }
             // add a comment with the warnings to the PR
             await octokit.rest.issues.createComment({
                 owner: github.context.repo.owner,
