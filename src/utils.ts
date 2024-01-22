@@ -46,3 +46,24 @@ export function findFileByName(
   // Actual function body
   return search(directory)
 }
+
+// TODO
+// export function getLinkToFile(fileName: string) {
+//     const ownerAndrepo = (process.env.GITHUB_REPOSITORY ?? '')
+//     const prNumber = parseInt(
+//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
+//       10
+//     )
+//     const commitHash = github.context.sha
+
+//     const url = `https://github.com/${ownerAndrepo}/blob/8981b8b88e36a222bceee0c1fe85b62a9d175a93/cmake/cmake-format.py`
+// }
+
+// export function getLinkToChanges(fileName: string) {
+//     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
+//     const prNumber = parseInt(
+//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
+//       10
+//     )
+
+// }

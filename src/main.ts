@@ -144,10 +144,11 @@ export async function run(): Promise<void> {
     } else {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
       // construct the message
-      let message = ''
+      let message = '# DocTagChecker\n\n'
 
       if (unknownTags.size !== 0) {
-        message += `The following tags could not be found in the latest revision:
+        message += `## Unknown Tags
+The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:-------:|:------------:|\n`
 
@@ -158,8 +159,8 @@ export async function run(): Promise<void> {
       }
 
       if (unchangedDoc.size !== 0) {
-        message +=
-          'The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n'
+        message += `## Unchanged Documentation
+The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`
         unchangedDoc.forEach((tags, docfile) => {
           message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`
         })
@@ -176,7 +177,7 @@ export async function run(): Promise<void> {
       console.log(
         '------------------------------- octokit.rest.issues.listComments -------------------------------'
       )
-      console.log(response)
+      console.log(commentsResponse)
       // Find the ID of the last comment made by the action
       const lastCommentId =
         commentsResponse.data[commentsResponse.data.length - 1].id
