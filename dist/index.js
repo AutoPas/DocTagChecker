@@ -29053,7 +29053,7 @@ async function run() {
                 message +=
                     'The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n';
                 unchangedDoc.forEach((tags, docfile) => {
-                    message += `- [ ] ${path.basename(docfile)} (changed: ${tags})`;
+                    message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
                 });
             }
             // add a comment with the warnings to the PR

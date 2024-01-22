@@ -148,7 +148,7 @@ export async function run(): Promise<void> {
         message +=
           'The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n'
         unchangedDoc.forEach((tags, docfile) => {
-          message += `- [ ] ${path.basename(docfile)} (changed: ${tags})`
+          message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`
         })
       }
 
