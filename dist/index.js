@@ -28940,51 +28940,13 @@ const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
+const utils_1 = __nccwpck_require__(1314);
 /**
- * Recursively searches for a file with a specific name in a given directory.
- * @param directory The directory to start the search from.
- * @param fileName The name of the file to search for.
- * @returns The path of the found file or null if the file is not found.
+ * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
+ * @param userdocs - An array of paths to documentation files.
+ * @param changes - An array of paths to files that have been changed.
+ * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
-function findFileByName(directory, fileName) {
-    /**
-     * Recursive helper function to search for the file.
-     * @param currentDir The current directory to search.
-     */
-    function search(currentDir) {
-        const items = fs.readdirSync(currentDir);
-        // Go over everything in the current directory
-        for (const item of items) {
-            const itemPath = path.join(currentDir, item);
-            // Check if the current item (file or dir) is what we are looking for
-            if (item === path.basename(fileName)) {
-                // File found in the current directory
-                return itemPath;
-            }
-            // If the item is a directory descend into it
-            const isDirectory = fs.statSync(itemPath).isDirectory();
-            if (isDirectory) {
-                // Recursive call for subdirectories
-                const result = search(itemPath);
-                if (result !== null) {
-                    // File found, propagate the result up
-                    return result;
-                }
-            }
-        }
-        // File not found in this directory or its subdirectories
-        return null;
-    }
-    // Actual function body
-    try {
-        return search(directory);
-    }
-    catch (error) {
-        if (error instanceof Error)
-            console.error(`Error while searching for a file: ${error.message}`);
-        return null;
-    }
-}
 function checkDocumentation(userdocs, changes) {
     // Flag for if any errors are found
     let exitCode = 0;
@@ -28992,17 +28954,17 @@ function checkDocumentation(userdocs, changes) {
     for (const docfile of userdocs) {
         // Get list of file tags. (All words that end with .txt, .h, or .cpp without full paths)
         const fileContent = fs.readFileSync(docfile, 'utf-8');
-        let fileTags = Array.from(fileContent.match(/[^\/\s]+\.(h|cpp|txt)\b/g) || []);
+        let fileTags = Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || []);
         // Get list of directory tags (All strings that end on '/' after "Related ...Folders"; this split is case-insensitive:w
         const directoryTags = Array.from(fileContent
             .split(/Related Files and Folders/i)[1]
             .match(/[\S]+\/(?!\S)/g) || []);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
-        let unknownTags = [];
+        const unknownTags = [];
         // append the content of all directories to the tags
         for (const tag of [...directoryTags]) {
             // If the path in the tag doesn't exist, it's an error
-            if (findFileByName('.', tag) === null) {
+            if ((0, utils_1.findFileByName)('.', tag) === null) {
                 unknownTags.push(tag);
                 exitCode = 1;
             }
@@ -29012,7 +28974,7 @@ function checkDocumentation(userdocs, changes) {
         }
         for (const tag of [...fileTags]) {
             // If the path in the tag doesn't exist, it's an error
-            if (findFileByName('.', tag) === null) {
+            if ((0, utils_1.findFileByName)('.', tag) === null) {
                 unknownTags.push(tag);
                 exitCode = 1;
             }
@@ -29060,7 +29022,7 @@ async function run() {
         // Extract file names from the response
         const changedFiles = response.data.map(file => file.filename);
         core.info(`changed files: ${changedFiles}`);
-        const exitCode = checkDocumentation(docFiles, changedFiles);
+        /*const exitCode =*/ checkDocumentation(docFiles, changedFiles);
         // Set outputs for other workflow steps to use
         // TODO: use exitCode
         core.setOutput('warnings', 'NO WARNINGS');
@@ -29072,6 +29034,88 @@ async function run() {
     }
 }
 exports.run = run;
+
+
+/***/ }),
+
+/***/ 1314:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.findFileByName = void 0;
+const fs = __importStar(__nccwpck_require__(7147));
+const path = __importStar(__nccwpck_require__(1017));
+/**
+ * Recursively searches for a file with a specific name in a given directory.
+ * @param directory The directory to start the search from.
+ * @param fileName The name of the file to search for.
+ * @returns The path of the found file or null if the file is not found.
+ */
+function findFileByName(directory, fileName) {
+    /**
+     * Recursive helper function to search for the file.
+     * @param currentDir The current directory to search.
+     */
+    function search(currentDir) {
+        const items = fs.readdirSync(currentDir);
+        // Go over everything in the current directory
+        for (const item of items) {
+            const itemPath = path.join(currentDir, item);
+            // Check if the current item (file or dir) is what we are looking for
+            if (item === path.basename(fileName)) {
+                // File found in the current directory
+                return itemPath;
+            }
+            // If the item is a directory descend into it
+            const isDirectory = fs.statSync(itemPath).isDirectory();
+            if (isDirectory) {
+                // Recursive call for subdirectories
+                const result = search(itemPath);
+                if (result !== null) {
+                    // File found, propagate the result up
+                    return result;
+                }
+            }
+        }
+        // File not found in this directory or its subdirectories
+        return null;
+    }
+    // Actual function body
+    try {
+        return search(directory);
+    }
+    catch (error) {
+        if (error instanceof Error)
+            console.error(`Error while searching for a file: ${error.message}`);
+        return null;
+    }
+}
+exports.findFileByName = findFileByName;
 
 
 /***/ }),

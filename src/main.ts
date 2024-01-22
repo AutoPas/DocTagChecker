@@ -10,9 +10,8 @@ import { findFileByName } from './utils'
  * @param changes - An array of paths to files that have been changed.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
-function checkDocumentation(userdocs: string[], changes: string[]): number {
-  // Flag for if any errors are found
-  let exitCode = 0
+function checkDocumentation(userdocs: string[], changes: string[]): string {
+  let output= '' 
 
   const changesBasenames = changes.map(f => path.basename(f))
 
@@ -36,7 +35,6 @@ function checkDocumentation(userdocs: string[], changes: string[]): number {
       // If the path in the tag doesn't exist, it's an error
       if (findFileByName('.', tag) === null) {
         unknownTags.push(tag)
-        exitCode = 1
       } else {
         fileTags = fileTags.concat(fs.readdirSync(tag))
       }
@@ -46,26 +44,20 @@ function checkDocumentation(userdocs: string[], changes: string[]): number {
       // If the path in the tag doesn't exist, it's an error
       if (findFileByName('.', tag) === null) {
         unknownTags.push(tag)
-        exitCode = 1
       }
       // If any tag appears in the changes, the doc file also has to be in the changes
       if (!docfileHasChanges && changesBasenames.includes(tag)) {
-        console.log(
-          `${tag} has been changed, but ${docfile} is unchanged. Check that the documentation is still up to date!`
-        )
-        exitCode = 1
+        output += `${tag} has been changed, but ${docfile} is unchanged. Check that the documentation is still up to date!\n`
       }
     }
 
     // If any unknownTags were found (unknownTags not empty)
     if (unknownTags.length !== 0) {
-      console.log(
-        `In ${docfile}, the following tags do not exist:\n${unknownTags}`
-      )
+      output += `In ${docfile}, the following tags do not exist:\n${unknownTags}\n`
     }
   }
 
-  return exitCode
+  return output
 }
 
 /**
@@ -79,7 +71,7 @@ export async function run(): Promise<void> {
     const dirs = core.getInput('userDocsDirs').split(/\s+/)
     const ghToken = core.getInput('githubToken')
     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
-    const pull_number = parseInt(
+    const prNumber = parseInt(
       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
       10
     )
@@ -100,19 +92,32 @@ export async function run(): Promise<void> {
     const response = await octokit.rest.pulls.listFiles({
       owner,
       repo,
-      pull_number
+      prNumber
     })
     // Extract file names from the response
     const changedFiles = response.data.map(file => file.filename)
     core.info(`changed files: ${changedFiles}`)
 
-    /*const exitCode =*/ checkDocumentation(docFiles, changedFiles)
+    const errMsgs = checkDocumentation(docFiles, changedFiles)
 
     // Set outputs for other workflow steps to use
-    // TODO: use exitCode
-    core.setOutput('warnings', 'NO WARNINGS')
+    if (errMsgs.length === 0) {
+      core.setOutput('warnings', 'NO WARNINGS')
+    } else {
+      core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
+      // add a comment with the warnings to the PR
+      await octokit.rest.issues.createComment({
+        owner: owner,
+        repo: repo,
+        issue_number: prNumber,
+        body: errMsgs
+      });
+    }
+
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    }
   }
 }
