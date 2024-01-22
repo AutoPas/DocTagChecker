@@ -28959,16 +28959,18 @@ function checkDocumentation(userdocs, changes) {
         const directoryTags = Array.from(fileContent
             .split(/Related Files and Folders/i)[1]
             .match(/[\S]+\/(?!\S)/g) || []);
+        console.log(`Found tags: ${docfile} | ${fileTags} | ${directoryTags}`);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
         const unknownTagsLocal = [];
         const unchangedDocLocal = [];
         // append the content of all directories to the tags
         for (const tag of [...directoryTags]) {
-            // If the path in the tag doesn't exist, it's an error
             if ((0, utils_1.findFileByName)('.', tag) === null) {
+                // if the dir can not be found it's an unknown tag
                 unknownTagsLocal.push(tag);
             }
             else {
+                // if it can be found, all files in it are file tags
                 fileTags = fileTags.concat(fs.readdirSync(tag));
             }
         }
@@ -29005,8 +29007,11 @@ async function run() {
         // Get directories as arrays. Split at any amount of white space characters.
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
         const ghToken = core.getInput('githubToken');
-        const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/');
         const prNumber = parseInt((process.env.GITHUB_REF_NAME ?? '').split('/')[0], 10);
+        console.log('------------------------------- process.env -------------------------------');
+        console.log(process.env);
+        console.log('------------------------------- github.context -------------------------------');
+        console.log(github.context);
         core.info(`User doc directories: ${dirs}`);
         // Get list of doc files
         const docFiles = dirs.flatMap(d => fs.readdirSync(d).map(f => path.join(d, f)));
@@ -29019,10 +29024,12 @@ async function run() {
         const octokit = github.getOctokit(ghToken);
         // Get the list of changed files in the pull request
         const response = await octokit.rest.pulls.listFiles({
-            owner: owner,
-            repo: repo,
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
             pull_number: prNumber
         });
+        console.log('------------------------------- octokit.rest.pulls.listFiles -------------------------------');
+        console.log(response);
         // TODO: TEST THIS
         // Filter out files with only whitespace changes
         // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
@@ -29056,10 +29063,27 @@ async function run() {
                     message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
                 });
             }
+            // remove the last comment to avoid spam
+            // Retrieve the comments made by the action using the GitHub API
+            const commentsResponse = await octokit.rest.issues.listComments({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                issue_number: prNumber
+            });
+            console.log('------------------------------- octokit.rest.issues.listComments -------------------------------');
+            console.log(response);
+            // Find the ID of the last comment made by the action
+            const lastCommentId = commentsResponse.data[commentsResponse.data.length - 1].id;
+            // Delete the last comment using the GitHub API
+            await octokit.rest.issues.deleteComment({
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
+                comment_id: lastCommentId
+            });
             // add a comment with the warnings to the PR
             await octokit.rest.issues.createComment({
-                owner: owner,
-                repo: repo,
+                owner: github.context.repo.owner,
+                repo: github.context.repo.repo,
                 issue_number: prNumber,
                 body: message
             });
