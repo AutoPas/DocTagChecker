@@ -28997,43 +28997,38 @@ function checkDocumentation(userdocs, changes) {
     }
     return { unchangedDoc, unknownTags };
 }
-// /**
-//  * Remove last comment made by this action to avoid spam.
-//  * If no previous comment can be found do nothing.
-//  */
-// async function deleteLastComment(
-//   octokit: Octokit,
-//   header: string
-// ): Promise<void> {
-//   // const octokit = github.getOctokit(ghToken)
-//   // Retrieve the comments made by the action using the GitHub API
-//   const commentsResponse = await octokit.rest.issues.listComments({
-//     owner: github.context.repo.owner,
-//     repo: github.context.repo.repo,
-//     issue_number: github.context.payload.pull_request!.number
-//   })
-//   // Find the last comment added by the action based on a specific marker or signature
-//   const lastCommentId = (() => {
-//     const expectedUser = 'github-actions[bot]'
-//     for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
-//       if (
-//         commentsResponse.data[i].user!.login === expectedUser &&
-//         commentsResponse.data[i].body!.includes(header)
-//       ) {
-//         return commentsResponse.data[i].id
-//       }
-//     }
-//     return -1
-//   })()
-//   // If we found a previous comment by the bot delete it
-//   if (lastCommentId !== -1) {
-//     await octokit.rest.issues.deleteComment({
-//       owner: github.context.repo.owner,
-//       repo: github.context.repo.repo,
-//       comment_id: lastCommentId
-//     })
-//   }
-// }
+/**
+ * Remove last comment made by this action to avoid spam.
+ * If no previous comment can be found do nothing.
+ */
+async function deleteLastComment(ghToken, header) {
+    const octokit = github.getOctokit(ghToken);
+    // Retrieve the comments made by the action using the GitHub API
+    const commentsResponse = await octokit.rest.issues.listComments({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: github.context.payload.pull_request.number
+    });
+    // Find the last comment added by the action based on a specific marker or signature
+    const lastCommentId = (() => {
+        const expectedUser = 'github-actions[bot]';
+        for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
+            if (commentsResponse.data[i].user.login === expectedUser &&
+                commentsResponse.data[i].body.includes(header)) {
+                return commentsResponse.data[i].id;
+            }
+        }
+        return -1;
+    })();
+    // If we found a previous comment by the bot delete it
+    if (lastCommentId !== -1) {
+        await octokit.rest.issues.deleteComment({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            comment_id: lastCommentId
+        });
+    }
+}
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -29055,9 +29050,6 @@ async function run() {
         }
         // GitHub interaction framework
         const octokit = github.getOctokit(ghToken);
-        console.log('-----------------------------');
-        console.log(typeof octokit);
-        console.log('-----------------------------');
         // Get the list of changed files in the pull request
         const response = await octokit.rest.pulls.listFiles({
             owner: github.context.repo.owner,
@@ -29099,7 +29091,7 @@ The following doc files are unchanged, but some related sources were changed. Ma
                     message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
                 });
             }
-            // await deleteLastComment(octokit, header)
+            await deleteLastComment(ghToken, header);
             // add a comment with the warnings to the PR
             await octokit.rest.issues.createComment({
                 owner: github.context.repo.owner,
