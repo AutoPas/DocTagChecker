@@ -161,8 +161,11 @@ The following tags could not be found in the latest revision:
       const docfileLink = `[${path.basename(docfile)}](${getUrlToFile(
         docfile
       )})`
+      const tagsDecorated = tags.map(tag => {
+        return ` \`${tag}\``
+      })
       // These tags are unknown so don't try to create links for them.
-      message += `| ${docfileLink} | ${tags} |\n`
+      message += `| ${docfileLink} | ${tagsDecorated} |\n`
     })
     message += '\n'
   }

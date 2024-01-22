@@ -29061,8 +29061,11 @@ The following tags could not be found in the latest revision:
 |:--------|:------------:|\n`;
         unknownTags.forEach((tags, docfile) => {
             const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
+            const tagsDecorated = tags.map(tag => {
+                return ` \`${tag}\``;
+            });
             // These tags are unknown so don't try to create links for them.
-            message += `| ${docfileLink} | ${tags} |\n`;
+            message += `| ${docfileLink} | ${tagsDecorated} |\n`;
         });
         message += '\n';
     }
