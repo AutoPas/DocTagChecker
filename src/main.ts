@@ -144,16 +144,11 @@ function buildMessage(
 
   // Local helper function turning a list of tags into named urls to changes.
   let tagsToUrls = (tagList: string[]): string[] => {
-    console.log(`WWWWWWWWWWWWWWWw TAGS TO URLs WWWWWWWWWWWWWWWw`)
     return tagList.map((tag: string): string => {
-      console.log(tag)
       const filePath: string = findFileByName('.', tag)!
-      console.log(filePath)
-      console.log(getUrlToChanges(filePath))
       return `[${tag}](${getUrlToChanges(filePath)})`
     })
   }
-  console.log(3)
 
   // Add content for unknown tags
   if (unknownTags.size !== 0) {
@@ -163,18 +158,15 @@ The following tags could not be found in the latest revision:
 |:--------|:------------:|\n`
 
     unknownTags.forEach((tags, docfile) => {
-      console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`)
       const docfileLink = `[${path.basename(docfile)}](${getUrlToFile(
         docfile
       )})`
-      console.log(docfileLink)
       // These tags are unknown so don't try to create links for them.
       message += `| ${docfileLink} | ${tags} |\n`
     })
     message += '\n'
   }
 
-  console.log(4)
   // Add content for unchanged documentation
   if (unchangedDoc.size !== 0) {
     message += `## Unchanged Documentation
@@ -221,6 +213,9 @@ async function getChangedFiles(ghToken: string): Promise<string[]> {
     pull_number: github.context.payload.pull_request!.number
   })
 
+  console.log('----------------------------------------------')
+  console.log(response)
+  console.log('----------------------------------------------')
   // Filter out files with only whitespace changes
   const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
     return file.status !== 'modified' && file.status !== 'added'
@@ -257,12 +252,10 @@ export async function run(): Promise<void> {
     core.info(`changed files: ${changedFiles}`)
 
     // ---------------- Check docs and tags ----------------
-    console.log(1)
     const { unchangedDoc, unknownTags } = checkDocumentation(
       docFiles,
       changedFiles
     )
-    console.log(2)
 
     // ---------------- Process the analysis ----------------
     // Common header to identify this bot's messages.
@@ -279,7 +272,6 @@ export async function run(): Promise<void> {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
       // Add a new comment with the warnings to the PR.
       const message = buildMessage(unchangedDoc, unknownTags, header)
-      console.log(5)
       await postMessage(ghToken, message)
     }
   } catch (error) {
