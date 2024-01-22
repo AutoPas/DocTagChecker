@@ -29048,16 +29048,11 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     let message = header;
     // Local helper function turning a list of tags into named urls to changes.
     let tagsToUrls = (tagList) => {
-        console.log(`WWWWWWWWWWWWWWWw TAGS TO URLs WWWWWWWWWWWWWWWw`);
         return tagList.map((tag) => {
-            console.log(tag);
             const filePath = (0, utils_1.findFileByName)('.', tag);
-            console.log(filePath);
-            console.log((0, utils_1.getUrlToChanges)(filePath));
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
         });
     };
-    console.log(3);
     // Add content for unknown tags
     if (unknownTags.size !== 0) {
         message += `## Unknown Tags
@@ -29065,15 +29060,12 @@ The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:--------|:------------:|\n`;
         unknownTags.forEach((tags, docfile) => {
-            console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`);
             const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
-            console.log(docfileLink);
             // These tags are unknown so don't try to create links for them.
             message += `| ${docfileLink} | ${tags} |\n`;
         });
         message += '\n';
     }
-    console.log(4);
     // Add content for unchanged documentation
     if (unchangedDoc.size !== 0) {
         message += `## Unchanged Documentation
@@ -29113,6 +29105,9 @@ async function getChangedFiles(ghToken) {
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number
     });
+    console.log('----------------------------------------------');
+    console.log(response);
+    console.log('----------------------------------------------');
     // Filter out files with only whitespace changes
     const filesWithoutWhitespaceChanges = response.data.filter((file) => {
         return file.status !== 'modified' && file.status !== 'added';
@@ -29143,9 +29138,7 @@ async function run() {
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`changed files: ${changedFiles}`);
         // ---------------- Check docs and tags ----------------
-        console.log(1);
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles);
-        console.log(2);
         // ---------------- Process the analysis ----------------
         // Common header to identify this bot's messages.
         const header = '# DocTagChecker\n\n';
@@ -29162,7 +29155,6 @@ async function run() {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
             // Add a new comment with the warnings to the PR.
             const message = buildMessage(unchangedDoc, unknownTags, header);
-            console.log(5);
             await postMessage(ghToken, message);
         }
     }
