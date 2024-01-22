@@ -29002,6 +29002,7 @@ function checkDocumentation(userdocs, changes) {
  * If no previous comment can be found do nothing.
  * @param ghToken GitHub Token
  * @param header Header to identify the last bot message.
+ * @returns {Promise<void>} Resolves when the function is complete.
  */
 async function deleteLastComment(ghToken, header) {
     const octokit = github.getOctokit(ghToken);
@@ -29067,57 +29068,80 @@ The following doc files are unchanged, but some related sources were changed. Ma
     return message;
 }
 /**
+ * Post the given message as a comment to the current PR.
+ * @param ghToken GitHub Token.
+ * @param message The body of the new comment.
+ * @returns {Promise<void>} Resolves when the action is complete.
+ */
+async function postMessage(ghToken, message) {
+    const octokit = github.getOctokit(ghToken);
+    await octokit.rest.issues.createComment({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        issue_number: github.context.payload.pull_request.number,
+        body: message
+    });
+}
+/**
+ * Fetch the list of files that have changes in this PR from GitHub.
+ * @param ghToken GitHub Token.
+ * @return Promise with the array of filenames.
+ */
+async function getChangedFiles(ghToken) {
+    // GitHub interaction framework
+    const octokit = github.getOctokit(ghToken);
+    // Get the list of changed files in the pull request
+    const response = await octokit.rest.pulls.listFiles({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        pull_number: github.context.payload.pull_request.number
+    });
+    // TODO: TEST THIS
+    // Filter out files with only whitespace changes
+    // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
+    //   return file.status !== 'modified' && file.status !== 'added';
+    // });
+    // Extract file names from the response
+    return response.data.map(file => file.filename);
+}
+/**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 async function run() {
     try {
-        // Input parsing
+        // Input parsing and validation
+        const ghToken = core.getInput('githubToken');
+        // Sanity check
+        if (ghToken === undefined) {
+            core.setFailed(`ghToken === undefined. Aborting`);
+            return;
+        }
         // Get directories as arrays. Split at any amount of white space characters.
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
-        const ghToken = core.getInput('githubToken');
-        const prNumber = parseInt((process.env.GITHUB_REF_NAME ?? '').split('/')[0], 10);
         core.info(`User doc directories: ${dirs}`);
         // Get list of doc files
         const docFiles = dirs.flatMap(d => fs.readdirSync(d).map(f => path.join(d, f)));
         core.info(`User doc files: ${docFiles}`);
-        if (ghToken === undefined) {
-            core.warning(`ghToken === undefined. Aborting`);
-            return;
-        }
-        // GitHub interaction framework
-        const octokit = github.getOctokit(ghToken);
-        // Get the list of changed files in the pull request
-        const response = await octokit.rest.pulls.listFiles({
-            owner: github.context.repo.owner,
-            repo: github.context.repo.repo,
-            pull_number: prNumber
-        });
-        // TODO: TEST THIS
-        // Filter out files with only whitespace changes
-        // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
-        //   return file.status !== 'modified' && file.status !== 'added';
-        // });
-        // Extract file names from the response
-        const changedFiles = response.data.map(file => file.filename);
+        // Get changes from the PR
+        const changedFiles = await getChangedFiles(ghToken);
         core.info(`changed files: ${changedFiles}`);
+        // Check docs and tags
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles);
+        // Process the analysis.
         // Set outputs for other workflow steps to use
         if (unchangedDoc.size === 0 && unknownTags.size === 0) {
             core.setOutput('warnings', 'NO WARNINGS');
         }
         else {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
+            // Common header to identify this bot's messages
             const header = '# DocTagChecker\n\n';
-            const message = buildMessage(unchangedDoc, unknownTags, header);
+            // Remove the last comment to avoid spam
             await deleteLastComment(ghToken, header);
             // Add a new comment with the warnings to the PR
-            await octokit.rest.issues.createComment({
-                owner: github.context.repo.owner,
-                repo: github.context.repo.repo,
-                issue_number: prNumber,
-                body: message
-            });
+            const message = buildMessage(unchangedDoc, unknownTags, header);
+            await postMessage(ghToken, message);
         }
     }
     catch (error) {
