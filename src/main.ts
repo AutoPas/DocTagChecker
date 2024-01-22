@@ -10,8 +10,12 @@ import { findFileByName } from './utils'
  * @param changes - An array of paths to files that have been changed.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
-function checkDocumentation(userdocs: string[], changes: string[]): string {
-  let output = ''
+function checkDocumentation(
+  userdocs: string[],
+  changes: string[]
+): { unchangedDoc: Map<string, string[]>; unknownTags: Map<string, string[]> } {
+  let unchangedDoc = new Map<string, string[]>()
+  let unknownTags = new Map<string, string[]>()
 
   const changesBasenames = changes.map(f => path.basename(f))
 
@@ -29,12 +33,13 @@ function checkDocumentation(userdocs: string[], changes: string[]): string {
     )
 
     const docfileHasChanges = changesBasenames.includes(path.basename(docfile))
-    const unknownTags: string[] = []
+    const unknownTagsLocal: string[] = []
+    const unchangedDocLocal: string[] = []
     // append the content of all directories to the tags
     for (const tag of [...directoryTags]) {
       // If the path in the tag doesn't exist, it's an error
       if (findFileByName('.', tag) === null) {
-        unknownTags.push(tag)
+        unknownTagsLocal.push(tag)
       } else {
         fileTags = fileTags.concat(fs.readdirSync(tag))
       }
@@ -43,21 +48,31 @@ function checkDocumentation(userdocs: string[], changes: string[]): string {
     for (const tag of [...fileTags]) {
       // If the path in the tag doesn't exist, it's an error
       if (findFileByName('.', tag) === null) {
-        unknownTags.push(tag)
+        unknownTagsLocal.push(tag)
       }
       // If any tag appears in the changes, the doc file also has to be in the changes
       if (!docfileHasChanges && changesBasenames.includes(tag)) {
-        output += `${tag} has been changed, but ${docfile} is unchanged. Check that the documentation is still up to date!\n`
+        unchangedDocLocal.push(tag)
       }
     }
 
-    // If any unknownTags were found (unknownTags not empty)
-    if (unknownTags.length !== 0) {
-      output += `In ${docfile}, the following tags do not exist:\n${unknownTags}\n`
+    // If any unknownTags were found store it to the return map
+    if (unknownTagsLocal.length !== 0) {
+      console.log(
+        `In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`
+      )
+      unknownTags.set(`${docfile}`, unknownTagsLocal)
+    }
+    // If any changes in related files were found store it to the return map
+    if (unchangedDocLocal.length !== 0) {
+      console.log(
+        `${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`
+      )
+      unchangedDoc.set(`${docfile}`, unchangedDocLocal)
     }
   }
 
-  return output
+  return { unchangedDoc, unknownTags }
 }
 
 /**
@@ -105,19 +120,44 @@ export async function run(): Promise<void> {
     const changedFiles = response.data.map(file => file.filename)
     core.info(`changed files: ${changedFiles}`)
 
-    const errMsgs = checkDocumentation(docFiles, changedFiles)
+    const { unchangedDoc, unknownTags } = checkDocumentation(
+      docFiles,
+      changedFiles
+    )
 
     // Set outputs for other workflow steps to use
-    if (errMsgs.length === 0) {
+    if (unchangedDoc.size === 0 && unknownTags.size === 0) {
       core.setOutput('warnings', 'NO WARNINGS')
     } else {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
+      // construct the message
+      let message = ''
+
+      if (unknownTags.size !== 0) {
+        message += `The following tags could not be found in the latest revision:
+| DocFile | Unknown Tags |
+|:-------:|:------------:|\n`
+
+        unknownTags.forEach((tags, docfile) => {
+          message += `| ${path.basename(docfile)} | ${tags} |\n`
+        })
+        message += '\n'
+      }
+
+      if (unchangedDoc.size !== 0) {
+        message +=
+          'The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n'
+        unchangedDoc.forEach((tags, docfile) => {
+          message += `- [ ] ${path.basename(docfile)} (changed: ${tags})`
+        })
+      }
+
       // add a comment with the warnings to the PR
       await octokit.rest.issues.createComment({
         owner: owner,
         repo: repo,
         issue_number: prNumber,
-        body: errMsgs
+        body: message
       })
     }
   } catch (error) {
