@@ -215,7 +215,7 @@ async function getChangedFiles(ghToken: string): Promise<string[]> {
  */
 export async function run(): Promise<void> {
   try {
-    // Input parsing and validation
+    // ---------------- Input parsing and validation ----------------
     const ghToken = core.getInput('githubToken')
     // Sanity check
     if (ghToken === undefined) {
@@ -235,23 +235,26 @@ export async function run(): Promise<void> {
     const changedFiles = await getChangedFiles(ghToken)
     core.info(`changed files: ${changedFiles}`)
 
-    // Check docs and tags
+    // ---------------- Check docs and tags ----------------
     const { unchangedDoc, unknownTags } = checkDocumentation(
       docFiles,
       changedFiles
     )
 
-    // Process the analysis.
-    // Set outputs for other workflow steps to use
+    // ---------------- Process the analysis ----------------
+    // Common header to identify this bot's messages.
+    const header = '# DocTagChecker\n\n'
+    // Remove the last comment to avoid spam.
+    await deleteLastComment(ghToken, header)
+    // Set outputs for other workflow steps to use.
     if (unchangedDoc.size === 0 && unknownTags.size === 0) {
       core.setOutput('warnings', 'NO WARNINGS')
+      // Message to signal that the checking actually happened.
+      const message = header + 'Looks good to me! 👍'
+      await postMessage(ghToken, message)
     } else {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
-      // Common header to identify this bot's messages
-      const header = '# DocTagChecker\n\n'
-      // Remove the last comment to avoid spam
-      await deleteLastComment(ghToken, header)
-      // Add a new comment with the warnings to the PR
+      // Add a new comment with the warnings to the PR.
       const message = buildMessage(unchangedDoc, unknownTags, header)
       await postMessage(ghToken, message)
     }

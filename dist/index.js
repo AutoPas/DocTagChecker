@@ -29110,7 +29110,7 @@ async function getChangedFiles(ghToken) {
  */
 async function run() {
     try {
-        // Input parsing and validation
+        // ---------------- Input parsing and validation ----------------
         const ghToken = core.getInput('githubToken');
         // Sanity check
         if (ghToken === undefined) {
@@ -29126,20 +29126,23 @@ async function run() {
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`changed files: ${changedFiles}`);
-        // Check docs and tags
+        // ---------------- Check docs and tags ----------------
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles);
-        // Process the analysis.
-        // Set outputs for other workflow steps to use
+        // ---------------- Process the analysis ----------------
+        // Common header to identify this bot's messages.
+        const header = '# DocTagChecker\n\n';
+        // Remove the last comment to avoid spam.
+        await deleteLastComment(ghToken, header);
+        // Set outputs for other workflow steps to use.
         if (unchangedDoc.size === 0 && unknownTags.size === 0) {
             core.setOutput('warnings', 'NO WARNINGS');
+            // Message to signal that the checking actually happened.
+            const message = header + 'Looks good to me! 👍';
+            await postMessage(ghToken, message);
         }
         else {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
-            // Common header to identify this bot's messages
-            const header = '# DocTagChecker\n\n';
-            // Remove the last comment to avoid spam
-            await deleteLastComment(ghToken, header);
-            // Add a new comment with the warnings to the PR
+            // Add a new comment with the warnings to the PR.
             const message = buildMessage(unchangedDoc, unknownTags, header);
             await postMessage(ghToken, message);
         }
@@ -29227,15 +29230,19 @@ function findFileByName(directory, fileName) {
     return search(directory);
 }
 exports.findFileByName = findFileByName;
-// TODO
-// export function getLinkToFile(fileName: string) {
-//     const ownerAndrepo = (process.env.GITHUB_REPOSITORY ?? '')
-//     const prNumber = parseInt(
-//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
-//       10
-//     )
-//     const commitHash = github.context.sha
-//     const url = `https://github.com/${ownerAndrepo}/blob/8981b8b88e36a222bceee0c1fe85b62a9d175a93/cmake/cmake-format.py`
+/**
+ * Constructs the URL to the given file in the repo at the state of the PR.
+ */
+// export function getLinkToFile(filePath: string): string {
+//   const ownerAndrepo = process.env.GITHUB_REPOSITORY ?? ''
+//   const prNumber = parseInt(
+//     (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
+//     10
+//   )
+//   const commitHash = github.context.sha
+//   // TODO not blob but PR
+//   const url = `https://github.com/${ownerAndrepo}/blob/${commitHash}/${filePath}`
+//   return url
 // }
 // export function getLinkToChanges(fileName: string) {
 //     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
