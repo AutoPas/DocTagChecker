@@ -29046,6 +29046,13 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     }
     // Message starts with the header
     let message = header;
+    // Local helper function turning a list of tags into named urls to changes.
+    let tagsToUrls = (tagList) => {
+        return tagList.map((tag) => {
+            const filePath = (0, utils_1.findFileByName)('.', tag);
+            return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
+        });
+    };
     // Add content for unknown tags
     if (unknownTags.size !== 0) {
         message += `## Unknown Tags
@@ -29053,7 +29060,7 @@ The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:-------:|:------------:|\n`;
         unknownTags.forEach((tags, docfile) => {
-            message += `| ${path.basename(docfile)} | ${tags} |\n`;
+            message += `| [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) | ${tagsToUrls(tags)} |\n`;
         });
         message += '\n';
     }
@@ -29062,7 +29069,7 @@ The following tags could not be found in the latest revision:
         message += `## Unchanged Documentation
 The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`;
         unchangedDoc.forEach((tags, docfile) => {
-            message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`;
+            message += `- [ ] [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) (changed: ${tagsToUrls(tags)})\n`;
         });
     }
     return message;
@@ -29187,10 +29194,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.findFileByName = void 0;
+exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
+const github = __importStar(__nccwpck_require__(5438));
+const crypto_1 = __importDefault(__nccwpck_require__(6113));
 /**
  * Recursively searches for a file with a specific name in a given directory.
  * @param directory The directory to start the search from.
@@ -29232,25 +29244,42 @@ function findFileByName(directory, fileName) {
 exports.findFileByName = findFileByName;
 /**
  * Constructs the URL to the given file in the repo at the state of the PR.
+ * @param filePath Path from the root of the repository to the file.
+ * @return URL as string.
  */
-// export function getLinkToFile(filePath: string): string {
-//   const ownerAndrepo = process.env.GITHUB_REPOSITORY ?? ''
-//   const prNumber = parseInt(
-//     (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
-//     10
-//   )
-//   const commitHash = github.context.sha
-//   // TODO not blob but PR
-//   const url = `https://github.com/${ownerAndrepo}/blob/${commitHash}/${filePath}`
-//   return url
-// }
-// export function getLinkToChanges(fileName: string) {
-//     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
-//     const prNumber = parseInt(
-//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
-//       10
-//     )
-// }
+function getUrlToFile(filePath) {
+    const owner = github.context.repo.owner;
+    const repo = github.context.repo.repo;
+    const commitHash = github.context.sha;
+    const url = `https://github.com/${owner}/${repo}/blob/${commitHash}/${filePath}`;
+    return url;
+}
+exports.getUrlToFile = getUrlToFile;
+/**
+ * Utility function to get the sha256 hash value of some string.
+ * @param input The string to hash.
+ * @return sha256 hash of input.
+ */
+function calculateSHA256(input) {
+    const hash = crypto_1.default.createHash('sha256');
+    hash.update(input);
+    return hash.digest('hex');
+}
+/**
+ * Constructs the URL to the change view of a file in the PR.
+ * @param filePath Path from the root of the repository to the file.
+ * @return URL as string.
+ */
+function getUrlToChanges(filePath) {
+    const owner = github.context.repo.owner;
+    const repo = github.context.repo.repo;
+    const commitHash = github.context.sha;
+    const prNumber = github.context.payload.pull_request.number;
+    const filePathHash = calculateSHA256(filePath);
+    const url = `https://github.com/${owner}/${repo}/pull/${prNumber}/files#diff-${filePathHash}`;
+    return url;
+}
+exports.getUrlToChanges = getUrlToChanges;
 
 
 /***/ }),

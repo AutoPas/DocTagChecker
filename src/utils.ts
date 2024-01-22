@@ -1,5 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import * as github from '@actions/github'
+import crypto from 'crypto'
 
 /**
  * Recursively searches for a file with a specific name in a given directory.
@@ -47,23 +49,43 @@ export function findFileByName(
   return search(directory)
 }
 
-// TODO
-// export function getLinkToFile(fileName: string) {
-//     const ownerAndrepo = (process.env.GITHUB_REPOSITORY ?? '')
-//     const prNumber = parseInt(
-//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
-//       10
-//     )
-//     const commitHash = github.context.sha
+/**
+ * Constructs the URL to the given file in the repo at the state of the PR.
+ * @param filePath Path from the root of the repository to the file.
+ * @return URL as string.
+ */
+export function getUrlToFile(filePath: string): string {
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
+  const commitHash = github.context.sha
 
-//     const url = `https://github.com/${ownerAndrepo}/blob/8981b8b88e36a222bceee0c1fe85b62a9d175a93/cmake/cmake-format.py`
-// }
+  const url = `https://github.com/${owner}/${repo}/blob/${commitHash}/${filePath}`
+  return url
+}
 
-// export function getLinkToChanges(fileName: string) {
-//     const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? '').split('/')
-//     const prNumber = parseInt(
-//       (process.env.GITHUB_REF_NAME ?? '').split('/')[0],
-//       10
-//     )
+/**
+ * Utility function to get the sha256 hash value of some string.
+ * @param input The string to hash.
+ * @return sha256 hash of input.
+ */
+function calculateSHA256(input: string): string {
+  const hash = crypto.createHash('sha256')
+  hash.update(input)
+  return hash.digest('hex')
+}
 
-// }
+/**
+ * Constructs the URL to the change view of a file in the PR.
+ * @param filePath Path from the root of the repository to the file.
+ * @return URL as string.
+ */
+export function getUrlToChanges(filePath: string): string {
+  const owner = github.context.repo.owner
+  const repo = github.context.repo.repo
+  const commitHash = github.context.sha
+  const prNumber = github.context.payload.pull_request!.number
+  const filePathHash = calculateSHA256(filePath)
+
+  const url = `https://github.com/${owner}/${repo}/pull/${prNumber}/files#diff-${filePathHash}`
+  return url
+}

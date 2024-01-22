@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import * as fs from 'fs'
 import * as path from 'path'
-import { findFileByName } from './utils'
+import { findFileByName, getUrlToChanges, getUrlToFile } from './utils'
 
 /**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
@@ -142,6 +142,14 @@ function buildMessage(
   // Message starts with the header
   let message = header
 
+  // Local helper function turning a list of tags into named urls to changes.
+  let tagsToUrls = (tagList: string[]): string[] => {
+    return tagList.map((tag: string): string => {
+      const filePath: string = findFileByName('.', tag)!
+      return `[${tag}](${getUrlToChanges(filePath)})`
+    })
+  }
+
   // Add content for unknown tags
   if (unknownTags.size !== 0) {
     message += `## Unknown Tags
@@ -150,7 +158,9 @@ The following tags could not be found in the latest revision:
 |:-------:|:------------:|\n`
 
     unknownTags.forEach((tags, docfile) => {
-      message += `| ${path.basename(docfile)} | ${tags} |\n`
+      message += `| [${path.basename(docfile)}](${getUrlToFile(
+        docfile
+      )}) | ${tagsToUrls(tags)} |\n`
     })
     message += '\n'
   }
@@ -160,7 +170,9 @@ The following tags could not be found in the latest revision:
     message += `## Unchanged Documentation
 The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`
     unchangedDoc.forEach((tags, docfile) => {
-      message += `- [ ] ${path.basename(docfile)} (changed: ${tags})\n`
+      message += `- [ ] [${path.basename(docfile)}](${getUrlToFile(
+        docfile
+      )}) (changed: ${tagsToUrls(tags)})\n`
     })
   }
 
