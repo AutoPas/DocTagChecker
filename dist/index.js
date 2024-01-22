@@ -29063,7 +29063,7 @@ function buildMessage(unchangedDoc, unknownTags, header) {
         message += `## Unknown Tags
 The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
-|:-------:|:------------:|\n`;
+|:--------|:------------:|\n`;
         unknownTags.forEach((tags, docfile) => {
             console.log(`XXXXXXXXXXXXx ${tags} | ${docfile}`);
             const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
@@ -29113,13 +29113,12 @@ async function getChangedFiles(ghToken) {
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number
     });
-    // TODO: TEST THIS
     // Filter out files with only whitespace changes
-    // const filesWithoutWhitespaceChanges = response.data.filter((file: any) => {
-    //   return file.status !== 'modified' && file.status !== 'added';
-    // });
+    const filesWithoutWhitespaceChanges = response.data.filter((file) => {
+        return file.status !== 'modified' && file.status !== 'added';
+    });
     // Extract file names from the response
-    return response.data.map(file => file.filename);
+    return filesWithoutWhitespaceChanges.map(file => file.filename);
 }
 /**
  * The main function for the action.
