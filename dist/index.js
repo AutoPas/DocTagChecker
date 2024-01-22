@@ -29105,15 +29105,8 @@ async function getChangedFiles(ghToken) {
         repo: github.context.repo.repo,
         pull_number: github.context.payload.pull_request.number
     });
-    console.log('----------------------------------------------');
-    console.log(response);
-    console.log('----------------------------------------------');
-    // Filter out files with only whitespace changes
-    const filesWithoutWhitespaceChanges = response.data.filter((file) => {
-        return file.status !== 'modified' && file.status !== 'added';
-    });
     // Extract file names from the response
-    return filesWithoutWhitespaceChanges.map(file => file.filename);
+    return response.data.map(file => file.filename);
 }
 /**
  * The main function for the action.
