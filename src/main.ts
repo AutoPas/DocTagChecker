@@ -169,7 +169,7 @@ function buildMessage(
     return ''
   }
 
-  // Message starts with the header
+  // Message starts with the header.
   let message = header
 
   // Local helper function turning a list of tags into named urls to changes.
@@ -180,35 +180,40 @@ function buildMessage(
     })
   }
 
-  // Add content for unknown tags
+  // Add content for unknown tags.
   if (unknownTags.size !== 0) {
     message += `## Unknown Tags
 The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:--------|:------------:|\n`
 
-    unknownTags.forEach((tags, docfile) => {
+    // Create one table row for each doc file.
+    for (const [docfile, tags] of unknownTags) {
+      // Turn filenames to links.
       const docfileLink = `[${path.basename(docfile)}](${getUrlToFile(
         docfile
       )})`
+      // Wrap tags in '`' and add space for readability.
       const tagsDecorated = tags.map(tag => {
         return ` \`${tag}\``
       })
       // These tags are unknown so don't try to create links for them.
       message += `| ${docfileLink} | ${tagsDecorated} |\n`
-    })
+    }
     message += '\n'
   }
 
-  // Add content for unchanged documentation
+  // Add content for unchanged documentation.
   if (unchangedDoc.size !== 0) {
     message += `## Unchanged Documentation
 The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`
-    unchangedDoc.forEach((tags, docfile) => {
+    // Create one task for each doc file.
+    for (const [docfile, tags] of unchangedDoc) {
+      // Add links to all filenames.
       message += `- [ ] [${path.basename(docfile)}](${getUrlToFile(
         docfile
       )}) (changed: ${tagsToUrls(tags)})\n`
-    })
+    }
   }
 
   return message
@@ -302,7 +307,9 @@ export async function run(): Promise<void> {
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) {
-      core.setFailed(error.message)
+      core.setFailed(`Action failed with error:\n${error}`)
+    } else {
+      core.setFailed(`Action failed with unknown type of error:\n${error}`)
     }
   }
 }
