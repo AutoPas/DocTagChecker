@@ -29040,14 +29040,14 @@ async function deleteLastComment(ghToken, header) {
     const commentsResponse = await octokit.rest.issues.listComments({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        issue_number: github.context.payload.pull_request.number
+        issue_number: (0, utils_1.assertNonNull)(github.context.payload.pull_request).number
     });
     // Find the last comment added by the action based on a specific marker or signature
     const lastCommentId = (() => {
         const expectedUser = 'github-actions[bot]';
         for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
-            if (commentsResponse.data[i].user.login === expectedUser &&
-                commentsResponse.data[i].body.includes(header)) {
+            if ((0, utils_1.assertNonNull)(commentsResponse.data[i].user).login === expectedUser &&
+                (0, utils_1.assertNonNull)(commentsResponse.data[i].body).includes(header)) {
                 return commentsResponse.data[i].id;
             }
         }
@@ -29074,38 +29074,43 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     if (unchangedDoc.size === 0 && unknownTags.size === 0) {
         return '';
     }
-    // Message starts with the header
+    // Message starts with the header.
     let message = header;
     // Local helper function turning a list of tags into named urls to changes.
     const tagsToUrls = (tagList) => {
         return tagList.map((tag) => {
-            const filePath = (0, utils_1.findFileByName)('.', tag);
+            const filePath = (0, utils_1.assertNonNull)((0, utils_1.findFileByName)('.', tag));
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
         });
     };
-    // Add content for unknown tags
+    // Add content for unknown tags.
     if (unknownTags.size !== 0) {
         message += `## Unknown Tags
 The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:--------|:------------:|\n`;
-        unknownTags.forEach((tags, docfile) => {
+        // Create one table row for each doc file.
+        for (const [docfile, tags] of unknownTags) {
+            // Turn filenames to links.
             const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
+            // Wrap tags in '`' and add space for readability.
             const tagsDecorated = tags.map(tag => {
                 return ` \`${tag}\``;
             });
             // These tags are unknown so don't try to create links for them.
             message += `| ${docfileLink} | ${tagsDecorated} |\n`;
-        });
+        }
         message += '\n';
     }
-    // Add content for unchanged documentation
+    // Add content for unchanged documentation.
     if (unchangedDoc.size !== 0) {
         message += `## Unchanged Documentation
 The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`;
-        unchangedDoc.forEach((tags, docfile) => {
+        // Create one task for each doc file.
+        for (const [docfile, tags] of unchangedDoc) {
+            // Add links to all filenames.
             message += `- [ ] [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) (changed: ${tagsToUrls(tags)})\n`;
-        });
+        }
     }
     return message;
 }
@@ -29120,7 +29125,7 @@ async function postMessage(ghToken, message) {
     await octokit.rest.issues.createComment({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        issue_number: github.context.payload.pull_request.number,
+        issue_number: (0, utils_1.assertNonNull)(github.context.payload.pull_request).number,
         body: message
     });
 }
@@ -29136,7 +29141,7 @@ async function getChangedFiles(ghToken) {
     const response = await octokit.rest.pulls.listFiles({
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
-        pull_number: github.context.payload.pull_request.number
+        pull_number: (0, utils_1.assertNonNull)(github.context.payload.pull_request).number
     });
     // Extract file names from the response
     return response.data.map(file => file.filename);
@@ -29187,7 +29192,10 @@ async function run() {
     catch (error) {
         // Fail the workflow run if an error occurs
         if (error instanceof Error) {
-            core.setFailed(error.message);
+            core.setFailed(`Action failed with error:\n${error}`);
+        }
+        else {
+            core.setFailed(`Action failed with unknown type of error:\n${error}`);
         }
     }
 }
@@ -29228,11 +29236,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = void 0;
+exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = exports.assertNonNull = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const github = __importStar(__nccwpck_require__(5438));
 const crypto_1 = __importDefault(__nccwpck_require__(6113));
+/**
+ * Retrieves the value of an optional type.
+ * If value is undefined or null an Error is thrown.
+ * @param value - The input value of type T | undefined | null
+ * @returns The non-nullable value of type T
+ * @throws Error if the input value is null or undefined
+ */
+function assertNonNull(value) {
+    if (value === undefined || value === null) {
+        throw new Error(`value is ${value}`);
+    }
+    return value;
+}
+exports.assertNonNull = assertNonNull;
 /**
  * Recursively searches for a file with a specific name in a given directory.
  * @param directory The directory to start the search from.
@@ -29303,7 +29325,7 @@ function calculateSHA256(input) {
 function getUrlToChanges(filePath) {
     const owner = github.context.repo.owner;
     const repo = github.context.repo.repo;
-    const prNumber = github.context.payload.pull_request.number;
+    const prNumber = assertNonNull(github.context.payload.pull_request).number;
     const filePathHash = calculateSHA256(filePath);
     const url = `https://github.com/${owner}/${repo}/pull/${prNumber}/files#diff-${filePathHash}`;
     return url;
