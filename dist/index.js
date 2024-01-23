@@ -28960,6 +28960,7 @@ function extractFileTags(fileContent) {
  */
 function extractDirectoryTags(fileContent) {
     return Array.from(fileContent
+        // Case insensitive match.
         .split(/Related Files and Folders/i)[1]
         // Match anything that ends on a '/'
         // \S = anything but whitespace
