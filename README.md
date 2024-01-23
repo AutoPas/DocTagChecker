@@ -1,5 +1,11 @@
 # DocTagChecker
 
+[![GitHub Super-Linter](https://github.com/AutoPas/DocTagChecker/actions/workflows/linter.yml/badge.svg)](https://github.com/super-linter/super-linter)
+![CI](https://github.com/AutoPas/DocTagChecker/actions/workflows/ci.yml/badge.svg)
+[![Check dist/](https://github.com/AutoPas/DocTagChecker/actions/workflows/check-dist.yml/badge.svg)](https://github.com/AutoPas/DocTagChecker/actions/workflows/check-dist.yml)
+[![CodeQL](https://github.com/AutoPas/DocTagChecker/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AutoPas/DocTagChecker/actions/workflows/codeql-analysis.yml)
+[![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
+
 An GitHub action to help you keep your user documentation up to date with your source code.
 
 It works by looking for file or directory tags in your markdown documentation and then checking if these documentation pages are changed if the linked source code is updated.
