@@ -5,6 +5,35 @@ import * as path from 'path'
 import { findFileByName, getUrlToChanges, getUrlToFile } from './utils'
 
 /**
+ * Get the list of file tags anywhere in the given file.
+ * A file tag is defined as a continuous word without `/` or white spaces and terminated by a file ending.
+ * TODO: file endings via optional input
+ * @param fileContent Content of a file given as string.
+ * @return String[] of tags.
+ */
+function extractFileTags(fileContent: string): string[] {
+  return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || [])
+}
+
+/**
+ * Get the list of directory tags in the given file.
+ * Directory tags are only considered after the string "Related Files and Folders".
+ * A directory tag is defined as a string of non white space characters that ends on '/'.
+ * @param fileContent Content of a file given as string.
+ * @return String[] of tags.
+ */
+function extractDirectoryTags(fileContent: string): string[] {
+  return Array.from(
+    fileContent
+      // Case insensitive match.
+      .split(/Related Files and Folders/i)[1]
+      // Match anything that ends on a '/'
+      // \S = anything but whitespace
+      .match(/[\S]+\/(?!\S)/g) || []
+  )
+}
+
+/**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
  * @param userdocs - An array of paths to documentation files.
  * @param changes - An array of paths to files that have been changed.
@@ -20,17 +49,9 @@ function checkDocumentation(
   const changesBasenames = changes.map(f => path.basename(f))
 
   for (const docfile of userdocs) {
-    // Get list of file tags. (All words that end with .txt, .h, or .cpp without full paths)
     const fileContent = fs.readFileSync(docfile, 'utf-8')
-    let fileTags = Array.from(
-      fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || []
-    )
-    // Get list of directory tags (All strings that end on '/' after "Related ...Folders"; this split is case-insensitive:w
-    const directoryTags: string[] = Array.from(
-      fileContent
-        .split(/Related Files and Folders/i)[1]
-        .match(/[\S]+\/(?!\S)/g) || []
-    )
+    let fileTags = extractFileTags(fileContent)
+    const directoryTags: string[] = extractDirectoryTags(fileContent)
     core.debug(
       `Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`
     )
@@ -38,36 +59,45 @@ function checkDocumentation(
     const docfileHasChanges = changesBasenames.includes(path.basename(docfile))
     const unknownTagsLocal: string[] = []
     const unchangedDocLocal: string[] = []
-    // append the content of all directories to the tags
+    // Validate all given file tags.
+    for (const tag of [...fileTags]) {
+      if (findFileByName('.', tag) === null) {
+        unknownTagsLocal.push(tag)
+      }
+    }
+    // Append the content of all directories to the tags.
     for (const tag of [...directoryTags]) {
       if (findFileByName('.', tag) === null) {
-        // if the dir can not be found it's an unknown tag
+        // If the dir can not be found it's an unknown tag.
         unknownTagsLocal.push(tag)
       } else {
-        // if it can be found, all files in it are file tags
-        fileTags = fileTags.concat(fs.readdirSync(tag))
+        // Read the content of the directory and split it in files and dirs.
+        const dirContent = fs.readdirSync(tag, { withFileTypes: true })
+        const files = dirContent.filter(d => d.isFile()).map(d => d.name)
+        const dirs = dirContent.filter(d => d.isDirectory()).map(d => d.name)
+        // Append files to file tags.
+        fileTags = fileTags.concat(files)
+        // Append dirs to dir tags. This extends the loop.
+        directoryTags.concat(dirs)
       }
     }
 
+    // Analyze all file tags for doc changes.
     for (const tag of [...fileTags]) {
-      // If the path in the tag doesn't exist, it's an error
-      if (findFileByName('.', tag) === null) {
-        unknownTagsLocal.push(tag)
-      }
-      // If any tag appears in the changes, the doc file also has to be in the changes
+      // If any tag appears in the changes, the doc file also has to be in the changes.
       if (!docfileHasChanges && changesBasenames.includes(tag)) {
         unchangedDocLocal.push(tag)
       }
     }
 
-    // If any unknownTags were found store it to the return map
+    // If any unknown tags were found store it to the return map.
     if (unknownTagsLocal.length !== 0) {
       core.debug(
         `In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`
       )
       unknownTags.set(`${docfile}`, unknownTagsLocal)
     }
-    // If any changes in related files were found store it to the return map
+    // If any changes in related files were found store it to the return map.
     if (unchangedDocLocal.length !== 0) {
       core.debug(
         `${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`

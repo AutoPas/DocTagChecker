@@ -28942,54 +28942,83 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const utils_1 = __nccwpck_require__(1314);
 /**
+ * Get the list of file tags anywhere in the given file.
+ * A file tag is defined as a continuous word without `/` or white spaces and terminated by a file ending.
+ * TODO: file endings via optional input
+ * @param fileContent Content of a file given as string.
+ * @return String[] of tags.
+ */
+function extractFileTags(fileContent) {
+    return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || []);
+}
+/**
+ * Get the list of directory tags in the given file.
+ * Directory tags are only considered after the string "Related Files and Folders".
+ * A directory tag is defined as a string of non white space characters that ends on '/'.
+ * @param fileContent Content of a file given as string.
+ * @return String[] of tags.
+ */
+function extractDirectoryTags(fileContent) {
+    return Array.from(fileContent
+        .split(/Related Files and Folders/i)[1]
+        // Match anything that ends on a '/'
+        // \S = anything but whitespace
+        .match(/[\S]+\/(?!\S)/g) || []);
+}
+/**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
  * @param userdocs - An array of paths to documentation files.
  * @param changes - An array of paths to files that have been changed.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
 function checkDocumentation(userdocs, changes) {
-    let unchangedDoc = new Map();
-    let unknownTags = new Map();
+    const unchangedDoc = new Map();
+    const unknownTags = new Map();
     const changesBasenames = changes.map(f => path.basename(f));
     for (const docfile of userdocs) {
-        // Get list of file tags. (All words that end with .txt, .h, or .cpp without full paths)
         const fileContent = fs.readFileSync(docfile, 'utf-8');
-        let fileTags = Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || []);
-        // Get list of directory tags (All strings that end on '/' after "Related ...Folders"; this split is case-insensitive:w
-        const directoryTags = Array.from(fileContent
-            .split(/Related Files and Folders/i)[1]
-            .match(/[\S]+\/(?!\S)/g) || []);
+        let fileTags = extractFileTags(fileContent);
+        const directoryTags = extractDirectoryTags(fileContent);
         core.debug(`Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
         const unknownTagsLocal = [];
         const unchangedDocLocal = [];
-        // append the content of all directories to the tags
+        // Validate all given file tags.
+        for (const tag of [...fileTags]) {
+            if ((0, utils_1.findFileByName)('.', tag) === null) {
+                unknownTagsLocal.push(tag);
+            }
+        }
+        // Append the content of all directories to the tags.
         for (const tag of [...directoryTags]) {
             if ((0, utils_1.findFileByName)('.', tag) === null) {
-                // if the dir can not be found it's an unknown tag
+                // If the dir can not be found it's an unknown tag.
                 unknownTagsLocal.push(tag);
             }
             else {
-                // if it can be found, all files in it are file tags
-                fileTags = fileTags.concat(fs.readdirSync(tag));
+                // Read the content of the directory and split it in files and dirs.
+                const dirContent = fs.readdirSync(tag, { withFileTypes: true });
+                const files = dirContent.filter(d => d.isFile()).map(d => d.name);
+                const dirs = dirContent.filter(d => d.isDirectory()).map(d => d.name);
+                // Append files to file tags.
+                fileTags = fileTags.concat(files);
+                // Append dirs to dir tags. This extends the loop.
+                directoryTags.concat(dirs);
             }
         }
+        // Analyze all file tags for doc changes.
         for (const tag of [...fileTags]) {
-            // If the path in the tag doesn't exist, it's an error
-            if ((0, utils_1.findFileByName)('.', tag) === null) {
-                unknownTagsLocal.push(tag);
-            }
-            // If any tag appears in the changes, the doc file also has to be in the changes
+            // If any tag appears in the changes, the doc file also has to be in the changes.
             if (!docfileHasChanges && changesBasenames.includes(tag)) {
                 unchangedDocLocal.push(tag);
             }
         }
-        // If any unknownTags were found store it to the return map
+        // If any unknown tags were found store it to the return map.
         if (unknownTagsLocal.length !== 0) {
             core.debug(`In ${docfile}, the following tags do not exist:\n${unknownTagsLocal}`);
             unknownTags.set(`${docfile}`, unknownTagsLocal);
         }
-        // If any changes in related files were found store it to the return map
+        // If any changes in related files were found store it to the return map.
         if (unchangedDocLocal.length !== 0) {
             core.debug(`${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${unchangedDocLocal}`);
             unchangedDoc.set(`${docfile}`, unchangedDocLocal);
@@ -29047,7 +29076,7 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     // Message starts with the header
     let message = header;
     // Local helper function turning a list of tags into named urls to changes.
-    let tagsToUrls = (tagList) => {
+    const tagsToUrls = (tagList) => {
         return tagList.map((tag) => {
             const filePath = (0, utils_1.findFileByName)('.', tag);
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
@@ -29144,7 +29173,7 @@ async function run() {
         if (unchangedDoc.size === 0 && unknownTags.size === 0) {
             core.setOutput('warnings', 'NO WARNINGS');
             // Message to signal that the checking actually happened.
-            const message = header + 'Looks good to me! 👍';
+            const message = `${header}Looks good to me! :shipit:`;
             await postMessage(ghToken, message);
         }
         else {
@@ -29273,7 +29302,6 @@ function calculateSHA256(input) {
 function getUrlToChanges(filePath) {
     const owner = github.context.repo.owner;
     const repo = github.context.repo.repo;
-    const commitHash = github.context.sha;
     const prNumber = github.context.payload.pull_request.number;
     const filePathHash = calculateSHA256(filePath);
     const url = `https://github.com/${owner}/${repo}/pull/${prNumber}/files#diff-${filePathHash}`;
