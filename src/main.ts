@@ -14,8 +14,8 @@ function checkDocumentation(
   userdocs: string[],
   changes: string[]
 ): { unchangedDoc: Map<string, string[]>; unknownTags: Map<string, string[]> } {
-  let unchangedDoc = new Map<string, string[]>()
-  let unknownTags = new Map<string, string[]>()
+  const unchangedDoc = new Map<string, string[]>()
+  const unknownTags = new Map<string, string[]>()
 
   const changesBasenames = changes.map(f => path.basename(f))
 
@@ -143,7 +143,7 @@ function buildMessage(
   let message = header
 
   // Local helper function turning a list of tags into named urls to changes.
-  let tagsToUrls = (tagList: string[]): string[] => {
+  const tagsToUrls = (tagList: string[]): string[] => {
     return tagList.map((tag: string): string => {
       const filePath: string = findFileByName('.', tag)!
       return `[${tag}](${getUrlToChanges(filePath)})`
@@ -261,7 +261,7 @@ export async function run(): Promise<void> {
     if (unchangedDoc.size === 0 && unknownTags.size === 0) {
       core.setOutput('warnings', 'NO WARNINGS')
       // Message to signal that the checking actually happened.
-      const message = header + 'Looks good to me! 👍'
+      const message = `${header}Looks good to me! :shipit:`
       await postMessage(ghToken, message)
     } else {
       core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID')
