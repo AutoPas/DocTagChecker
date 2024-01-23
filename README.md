@@ -51,7 +51,7 @@ The general development workflow should look as follows:
 git checkout -b myAwsomeUpdate
 ```
 2. Implement your update in [`src/`](src) in TypeScript.
-    2.1 If you need new input values for the action, add them to [`action.yaml`](action.yaml)
+    2.1 If you need new input values for the action, add them to [`action.yml`](action.yml)
 3. Add tests to [`__tests__`](__tests__).
 4. Format, build, and run the tests.
 ```bash
