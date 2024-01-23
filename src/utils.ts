@@ -4,6 +4,20 @@ import * as github from '@actions/github'
 import crypto from 'crypto'
 
 /**
+ * Retrieves the value of an optional type.
+ * If value is undefined or null an Error is thrown.
+ * @param value - The input value of type T | undefined | null
+ * @returns The non-nullable value of type T
+ * @throws Error if the input value is null or undefined
+ */
+export function assertNonNull<T>(value: T | undefined | null): T {
+  if (value === undefined || value === null) {
+    throw new Error(`value is ${value}`)
+  }
+  return value as T
+}
+
+/**
  * Recursively searches for a file with a specific name in a given directory.
  * @param directory The directory to start the search from.
  * @param fileName The name of the file to search for.
@@ -82,7 +96,7 @@ function calculateSHA256(input: string): string {
 export function getUrlToChanges(filePath: string): string {
   const owner = github.context.repo.owner
   const repo = github.context.repo.repo
-  const prNumber = github.context.payload.pull_request!.number
+  const prNumber = assertNonNull(github.context.payload.pull_request).number
   const filePathHash = calculateSHA256(filePath)
 
   const url = `https://github.com/${owner}/${repo}/pull/${prNumber}/files#diff-${filePathHash}`
