@@ -82,7 +82,6 @@ function calculateSHA256(input: string): string {
 export function getUrlToChanges(filePath: string): string {
   const owner = github.context.repo.owner
   const repo = github.context.repo.repo
-  const commitHash = github.context.sha
   const prNumber = github.context.payload.pull_request!.number
   const filePathHash = calculateSHA256(filePath)
 
