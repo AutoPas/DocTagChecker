@@ -2,7 +2,7 @@
  * Unit tests for src/utils.ts
  */
 
-import { findFileByName, assertValue } from '../src/utils'
+import { findFileByName, assertNonNull } from '../src/utils'
 import { expect } from '@jest/globals'
 
 describe('utils.ts', () => {
@@ -30,32 +30,32 @@ describe('utils.ts', () => {
     expect(() => findFileByName(haystack, needle)).toThrow()
   })
 
-  // Tests for assertValue()
-  it('assertValue(): Good values', async () => {
+  // Tests for assertNonNull()
+  it('assertNonNull(): Good values', async () => {
     {
       const source: string | undefined = 'abc'
-      const target: string = assertValue(source)
-      expect(target).toBe(source as string)
+      const target: string = assertNonNull(source)
+      expect(target).toBe(source)
     }
     {
       const source: number | undefined = 42
-      const target: number = assertValue(source)
-      expect(target).toBe(source as number)
+      const target: number = assertNonNull(source)
+      expect(target).toBe(source)
     }
     {
       const source: boolean | null = true
-      const target: boolean = assertValue(source)
-      expect(target).toBe(source as boolean)
+      const target: boolean = assertNonNull(source)
+      expect(target).toBe(source)
     }
   })
-  it('assertValue(): Bad values', async () => {
+  it('assertNonNull(): Bad values', async () => {
     {
       const source: string | undefined = undefined
-      expect(() => assertValue(source)).toThrow()
+      expect(() => assertNonNull(source)).toThrow()
     }
     {
       const source: number | null = null
-      expect(() => assertValue(source)).toThrow()
+      expect(() => assertNonNull(source)).toThrow()
     }
   })
 })

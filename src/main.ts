@@ -2,7 +2,12 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import * as fs from 'fs'
 import * as path from 'path'
-import { findFileByName, getUrlToChanges, getUrlToFile } from './utils'
+import {
+  assertNonNull,
+  findFileByName,
+  getUrlToChanges,
+  getUrlToFile
+} from './utils'
 
 /**
  * Get the list of file tags anywhere in the given file.
@@ -125,7 +130,7 @@ async function deleteLastComment(
   const commentsResponse = await octokit.rest.issues.listComments({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    issue_number: github.context.payload.pull_request!.number
+    issue_number: assertNonNull(github.context.payload.pull_request).number
   })
 
   // Find the last comment added by the action based on a specific marker or signature
@@ -133,8 +138,8 @@ async function deleteLastComment(
     const expectedUser = 'github-actions[bot]'
     for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
       if (
-        commentsResponse.data[i].user!.login === expectedUser &&
-        commentsResponse.data[i].body!.includes(header)
+        assertNonNull(commentsResponse.data[i].user).login === expectedUser &&
+        assertNonNull(commentsResponse.data[i].body).includes(header)
       ) {
         return commentsResponse.data[i].id
       }
@@ -175,7 +180,7 @@ function buildMessage(
   // Local helper function turning a list of tags into named urls to changes.
   const tagsToUrls = (tagList: string[]): string[] => {
     return tagList.map((tag: string): string => {
-      const filePath: string = findFileByName('.', tag)!
+      const filePath: string = assertNonNull(findFileByName('.', tag))
       return `[${tag}](${getUrlToChanges(filePath)})`
     })
   }
@@ -230,7 +235,7 @@ async function postMessage(ghToken: string, message: string): Promise<void> {
   await octokit.rest.issues.createComment({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    issue_number: github.context.payload.pull_request!.number,
+    issue_number: assertNonNull(github.context.payload.pull_request).number,
     body: message
   })
 }
@@ -248,7 +253,7 @@ async function getChangedFiles(ghToken: string): Promise<string[]> {
   const response = await octokit.rest.pulls.listFiles({
     owner: github.context.repo.owner,
     repo: github.context.repo.repo,
-    pull_number: github.context.payload.pull_request!.number
+    pull_number: assertNonNull(github.context.payload.pull_request).number
   })
 
   // Extract file names from the response
