@@ -32,7 +32,7 @@ jobs:
 DocTagChecker looks for two kinds of tags in all documentation files:
 
 - **File Tags**: Any filename that occurs in the file. A filename is a string without white spaces that ends with a file ending. File tags do not include paths.
-- **Directory Tags**: Any path that occurs after the string "Related Files and Folders", so it is advised to create such a section at the end of every documentation page. A path is a string without white spaces that ends with a `/`. It can be absolute or relative to the root of the repository.
+- **Directory Tags**: Any path that occurs after the string "Related Files and Folders", so it is advised to create such a section at the end of every documentation page. A path is a string without white spaces that ends with a `/`. It can be absolute or relative to the root of the repository. Everything in the tagged directory will be recursively added to the file tags.
 
 ## Build and Develop
 
