@@ -53,19 +53,26 @@ This GitHub action was created from the [actions/typescrip-action template](http
 The general development workflow should look as follows:
 
 1. Create a new branch for your update
-```bash
-git checkout -b myAwsomeUpdate
-```
+
+    ```bash
+    git checkout -b myAwsomeUpdate
+    ```
+
 2. Implement your update in [`src/`](src) in TypeScript.
+
     2.1 If you need new input values for the action, add them to [`action.yml`](action.yml)
 3. Add tests to [`__tests__`](__tests__).
 4. Format, build, and run the tests.
-```bash
-npm run all
-``` 
-This is critical. Without this step the JavaScript code, which is what's actually run, is not built and nothing changes!
+
+    ```bash
+    npm run all
+    ```
+
+    This is critical. Without this step the JavaScript code, which is what's actually run, is not built and nothing changes!
 5. Commit, push, review, merge to main.
 6. (If applicable) Create a new release using the [release script](script/release).
-```bash
-script/release
-```
+
+    ```bash
+    script/release
+    ```
+
