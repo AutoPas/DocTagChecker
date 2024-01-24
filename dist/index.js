@@ -29190,7 +29190,7 @@ function getDocFiles(directories, docExtensions, recursive) {
  */
 async function run() {
     try {
-        // ---------------- Input parsing and validation ----------------
+        // --------------------- Input parsing and validation ---------------------
         const ghToken = core.getInput('githubToken');
         // Sanity check
         if (ghToken === undefined) {
@@ -29219,9 +29219,9 @@ async function run() {
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`Changed files: ${changedFiles}`);
-        // ---------------- Check docs and tags ----------------
+        // ------------------------- Check docs and tags --------------------------
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions);
-        // ---------------- Process the analysis ----------------
+        // ------------------------- Process the analysis -------------------------
         // Common header to identify this bot's messages.
         const header = '# DocTagChecker\n\n';
         // Remove the last comment to avoid spam.

@@ -321,7 +321,7 @@ function getDocFiles(
  */
 export async function run(): Promise<void> {
   try {
-    // ---------------- Input parsing and validation ----------------
+    // --------------------- Input parsing and validation ---------------------
     const ghToken = core.getInput('githubToken')
     // Sanity check
     if (ghToken === undefined) {
@@ -355,7 +355,7 @@ export async function run(): Promise<void> {
     const changedFiles = await getChangedFiles(ghToken)
     core.info(`Changed files: ${changedFiles}`)
 
-    // ---------------- Check docs and tags ----------------
+    // ------------------------- Check docs and tags --------------------------
     const { unchangedDoc, unknownTags } = checkDocumentation(
       docFiles,
       changedFiles,
@@ -363,7 +363,7 @@ export async function run(): Promise<void> {
       srcFileExtensions
     )
 
-    // ---------------- Process the analysis ----------------
+    // ------------------------- Process the analysis -------------------------
     // Common header to identify this bot's messages.
     const header = '# DocTagChecker\n\n'
     // Remove the last comment to avoid spam.
