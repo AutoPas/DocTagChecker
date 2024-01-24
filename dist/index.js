@@ -28949,7 +28949,7 @@ const utils_1 = __nccwpck_require__(1314);
  * @return String[] of tags.
  */
 function extractFileTags(fileContent) {
-    return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt)\b/g) || []);
+    return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt|ts)\b/g) || []);
 }
 /**
  * Get the list of directory tags in the given file.
@@ -28992,16 +28992,20 @@ function checkDocumentation(userdocs, changes) {
         }
         // Append the content of all directories to the tags.
         for (const tag of [...directoryTags]) {
-            if ((0, utils_1.findFileByName)('.', tag) === null) {
+            if (!fs.existsSync(tag)) {
                 // If the dir can not be found it's an unknown tag.
                 unknownTagsLocal.push(tag);
             }
             else {
                 // Read the content of the directory and split it in files and dirs.
                 const dirContent = fs.readdirSync(tag, { withFileTypes: true });
-                const files = dirContent.filter(d => d.isFile()).map(d => d.name);
+                // Only consider files with any doc ending.
+                const files = dirContent
+                    .filter(d => d.isFile() && path.extname(d.name) === '.md')
+                    .map(d => d.name);
                 const dirs = dirContent.filter(d => d.isDirectory()).map(d => d.name);
                 // Append files to file tags.
+                // FIXME: this now also adds files with undesired endings
                 fileTags = fileTags.concat(files);
                 // Append dirs to dir tags. This extends the loop.
                 directoryTags.concat(dirs);
@@ -29162,8 +29166,22 @@ async function run() {
         // Get directories as arrays. Split at any amount of white space characters.
         const dirs = core.getInput('userDocsDirs').split(/\s+/);
         core.info(`User doc directories: ${dirs}`);
-        // Get list of doc files
-        const docFiles = dirs.flatMap(d => fs.readdirSync(d).map(f => path.join(d, f)));
+        // Get list of doc files in the immediate directory. No recursion!
+        // FIXME: Switch for recursive doc file discovery
+        // FIXME: Input for doc file extensions
+        const docFiles = dirs.flatMap(d => {
+            if (d === undefined ||
+                d === null ||
+                !fs.existsSync(d) ||
+                !fs.statSync(d).isDirectory()) {
+                throw new Error(`The given user doc directory does not exist: ${d}`);
+            }
+            return (fs
+                .readdirSync(d, { withFileTypes: true })
+                // Only files that end with a doc extension are returned.
+                .filter(f => f.isFile() && path.extname(f.name) === '.md')
+                .map(f => path.join(d, f.name)));
+        });
         core.info(`User doc files: ${docFiles}`);
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
@@ -29192,7 +29210,7 @@ async function run() {
     catch (error) {
         // Fail the workflow run if an error occurs
         if (error instanceof Error) {
-            core.setFailed(`Action failed with error:\n${error}`);
+            core.setFailed(`Action failed with error:\n${error}\n${error.stack}`);
         }
         else {
             core.setFailed(`Action failed with unknown type of error:\n${error}`);
