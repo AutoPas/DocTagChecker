@@ -8,7 +8,7 @@
 
 An GitHub action to help you keep your user documentation up to date with your source code.
 
-It works by looking for file or directory tags in your markdown documentation and then checking if these documentation pages are changed if the linked source code is updated.
+It works by looking for file or directory tags in your documentation and then checking if these documentation pages are changed if the linked source code is updated.
 Since this is very prone to false-positives it does never fail workflows but instead post status comments to the corresponding pull request.
 
 ## Usage
@@ -63,7 +63,7 @@ git checkout -b myAwsomeUpdate
 ```bash
 npm run all
 ``` 
-This is critical. Without this step the Javascript code, which is what's actually run, is not built and nothing changes!
+This is critical. Without this step the JavaScript code, which is what's actually run, is not built and nothing changes!
 5. Commit, push, review, merge to main.
 6. (If applicable) Create a new release using the [release script](script/release).
 ```bash
