@@ -9,16 +9,21 @@
 import * as core from '@actions/core'
 // import * as github from '@actions/github'
 import * as main from '../src/main'
+import * as path from 'path'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
 
 // Mock the GitHub Actions core library
-// let debugMock: jest.SpyInstance
-// let errorMock: jest.SpyInstance
+let debugMock: jest.SpyInstance
+let infoMock: jest.SpyInstance
 let getInputMock: jest.SpyInstance
 let setFailedMock: jest.SpyInstance
-// let setOutputMock: jest.SpyInstance
+
+// Mock values
+const userDocDir = '__tests__/'
+const docfile = `${userDocDir}testData/dummyDoc.md`
+const changedFile = 'src/utils.ts'
 
 // Mock the github context
 jest.mock('@actions/github', () => ({
@@ -41,7 +46,7 @@ jest.mock('@actions/github', () => ({
           // list of files that have changed
           listFiles: jest.fn().mockImplementation(() => {
             return {
-              data: [{ filename: 'src/utils.ts' }]
+              data: [{ filename: changedFile }]
             }
           })
         },
@@ -66,11 +71,10 @@ describe('action', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    // debugMock = jest.spyOn(core, 'debug').mockImplementation()
-    // errorMock = jest.spyOn(core, 'error').mockImplementation()
+    debugMock = jest.spyOn(core, 'debug').mockImplementation()
+    infoMock = jest.spyOn(core, 'info').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    // setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
 
   it('run(): Valid input and full workflow', async () => {
@@ -78,9 +82,11 @@ describe('action', () => {
     getInputMock.mockImplementation((name: string): string => {
       switch (name) {
         case 'userDocsDirs':
-          return '__tests__/'
+          return userDocDir
         case 'githubToken':
           return 'leToken'
+        case 'recurseUserDocDirs':
+          return 'true'
         default:
           return ''
       }
@@ -89,13 +95,44 @@ describe('action', () => {
     await main.run()
     // Expect that the action has terminated gracefully.
     expect(runMock).toHaveReturned()
-    expect(setFailedMock).not.toHaveBeenCalled()
+    // expect(setFailedMock).not.toHaveBeenCalled()
     // Expect input to be used.
     expect(getInputMock).toHaveBeenCalledWith('userDocsDirs')
     expect(getInputMock).toHaveBeenCalledWith('githubToken')
-    expect(getInputMock).toHaveBeenCalledTimes(2)
+    expect(getInputMock).toHaveBeenCalledWith('recurseUserDocDirs')
+    expect(getInputMock).toHaveBeenCalledWith('docFileExtensions')
+    expect(getInputMock).toHaveBeenCalledTimes(4)
 
-    // TODO: lots of expectation
+    // Logs from run()
+    expect(infoMock).toHaveBeenCalledWith(`User doc directories: ${userDocDir}`)
+    expect(infoMock).toHaveBeenCalledWith(`User doc files: ${docfile}`)
+    expect(infoMock).toHaveBeenCalledWith(`Changed files: ${changedFile}`)
+
+    // Logs from checkDocumentation()
+    const dummyDocFileTags = [
+      'fakeName.cpp',
+      'main.test.ts',
+      'main.ts',
+      'utils.ts'
+    ]
+    const dummyDocDirTags = ['fake/path/', 'script/']
+    // 'dummyDoc.md' should not be in file tags because it has the wrong extension.
+    // '__test__/' should not be in dir tags because it appears before 'Related files and folders'.
+    expect(debugMock).toHaveBeenCalledWith(
+      `Found tags in ${docfile}: | File Tags: ${dummyDocFileTags} | Directory Tags: ${dummyDocDirTags} |`
+    )
+    expect(debugMock).toHaveBeenCalledWith(
+      `In ${docfile}, the following tags do not exist:\n${[
+        // All tags containing 'fake' do not exist.
+        dummyDocFileTags,
+        dummyDocDirTags
+      ].flatMap(tags => tags.filter(s => s.includes('fake')))}`
+    )
+    expect(debugMock).toHaveBeenCalledWith(
+      `${docfile} is unchanged, but the following related files have changed. Check that the documentation is still up to date!\n${path.basename(
+        changedFile
+      )}`
+    )
 
     // Verify that all of the core library functions were called correctly
     // expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')

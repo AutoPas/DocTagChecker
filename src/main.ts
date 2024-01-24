@@ -65,13 +65,13 @@ function checkDocumentation(
     const unknownTagsLocal: string[] = []
     const unchangedDocLocal: string[] = []
     // Validate all given file tags.
-    for (const tag of [...fileTags]) {
+    for (const tag of fileTags) {
       if (findFileByName('.', tag) === null) {
         unknownTagsLocal.push(tag)
       }
     }
     // Append the content of all directories to the tags.
-    for (const tag of [...directoryTags]) {
+    for (const tag of directoryTags) {
       if (!fs.existsSync(tag)) {
         // If the dir can not be found it's an unknown tag.
         unknownTagsLocal.push(tag)
@@ -264,6 +264,46 @@ async function getChangedFiles(ghToken: string): Promise<string[]> {
   return response.data.map(file => file.filename)
 }
 
+// Get list of doc files in the immediate directory. No recursion!
+/**
+ * Get list of doc files in the immediate directory. No recursion!
+ * @param directories Array of directory paths to search for documentation files.
+ * @param recursive If true subdirectories are also searched.
+ * @return Array of paths to directory files.
+ */
+function getDocFiles(
+  directories: string[],
+  docExtensions: string[],
+  recursive: boolean
+): string[] {
+  // Create an array of doc files for every directory and combine them.
+  return directories.flatMap(d => {
+    // Make sure the directory paths actually exist and are directories.
+    if (
+      d === undefined ||
+      d === null ||
+      !fs.existsSync(d) ||
+      !fs.statSync(d).isDirectory()
+    ) {
+      throw new Error(`The given user doc directory does not exist: ${d}`)
+    }
+
+    // Read all directories, find doc files, turn them to paths
+    // and return them as string[].
+    const dirItems = fs.readdirSync(d, {
+      withFileTypes: true,
+      recursive
+    })
+    // Find files with an doc extension and get their full path from the repo root.
+    const docFiles = dirItems
+      .filter(
+        item => item.isFile() && docExtensions.includes(path.extname(item.name))
+      )
+      .map(item => path.join(item.path, item.name))
+    return docFiles
+  })
+}
+
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -280,32 +320,20 @@ export async function run(): Promise<void> {
     // Get directories as arrays. Split at any amount of white space characters.
     const dirs = core.getInput('userDocsDirs').split(/\s+/)
     core.info(`User doc directories: ${dirs}`)
-    // Get list of doc files in the immediate directory. No recursion!
-    // FIXME: Switch for recursive doc file discovery
-    // FIXME: Input for doc file extensions
-    const docFiles = dirs.flatMap(d => {
-      if (
-        d === undefined ||
-        d === null ||
-        !fs.existsSync(d) ||
-        !fs.statSync(d).isDirectory()
-      ) {
-        throw new Error(`The given user doc directory does not exist: ${d}`)
-      }
-
-      return (
-        fs
-          .readdirSync(d, { withFileTypes: true })
-          // Only files that end with a doc extension are returned.
-          .filter(f => f.isFile() && path.extname(f.name) === '.md')
-          .map(f => path.join(d, f.name))
-      )
-    })
+    // TODO: getInput
+    const recurseUserDocDirs =
+      core.getInput('recurseUserDocDirs').toLowerCase() === 'true'
+    core.info(`Parse user doc directories recursively: ${recurseUserDocDirs}`)
+    const docFileExtensions = (
+      core.getInput('docFileExtensions') || '.md'
+    ).split(/\s+/)
+    core.info(`Doc file extensions: ${docFileExtensions}`)
+    const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs)
     core.info(`User doc files: ${docFiles}`)
 
     // Get changes from the PR
     const changedFiles = await getChangedFiles(ghToken)
-    core.info(`changed files: ${changedFiles}`)
+    core.info(`Changed files: ${changedFiles}`)
 
     // ---------------- Check docs and tags ----------------
     const { unchangedDoc, unknownTags } = checkDocumentation(
