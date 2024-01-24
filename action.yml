@@ -16,6 +16,18 @@ inputs:
     description: 'The paths to the directories where the user doc files are, relative to the repository root.'
     required: true
     default: 'docs'
+  recurseUserDocDirs:
+    description: 'Whether to also look for user doc files in all subdirectories of the given directories'
+    required: false
+    default: false
+  docFileExtensions:
+    description: 'File extensions that are considered for doc files.'
+    required: false
+    default: 'md'
+  srcFileExtensions:
+    description: 'File extensions that are considered for source files.'
+    required: false
+    default: 'cpp h txt'
 
 # Define your outputs here.
 outputs:

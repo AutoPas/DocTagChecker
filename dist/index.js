@@ -28944,12 +28944,17 @@ const utils_1 = __nccwpck_require__(1314);
 /**
  * Get the list of file tags anywhere in the given file.
  * A file tag is defined as a continuous word without `/` or white spaces and terminated by a file ending.
- * TODO: file endings via optional input
  * @param fileContent Content of a file given as string.
+ * @param srcFileExtensions List of file extensions that are considered.
  * @return String[] of tags.
  */
-function extractFileTags(fileContent) {
-    return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt|ts)\b/g) || []);
+function extractFileTags(fileContent, srcFileExtensions) {
+    // Drop the leading '.' and combine everything with '|' as separator
+    const extensionsCombined = srcFileExtensions
+        .map(f => f.substring(1, f.length))
+        .join('|');
+    const srcFileRegex = new RegExp(`[^/\\s]+\\.(${extensionsCombined})\\b`, 'g');
+    return Array.from(fileContent.match(srcFileRegex) || []);
 }
 /**
  * Get the list of directory tags in the given file.
@@ -28972,13 +28977,13 @@ function extractDirectoryTags(fileContent) {
  * @param changes - An array of paths to files that have been changed.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
-function checkDocumentation(userdocs, changes) {
+function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensions) {
     const unchangedDoc = new Map();
     const unknownTags = new Map();
     const changesBasenames = changes.map(f => path.basename(f));
     for (const docfile of userdocs) {
         const fileContent = fs.readFileSync(docfile, 'utf-8');
-        let fileTags = extractFileTags(fileContent);
+        let fileTags = extractFileTags(fileContent, srcFileExtensions);
         const directoryTags = extractDirectoryTags(fileContent);
         core.debug(`Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
@@ -29001,18 +29006,17 @@ function checkDocumentation(userdocs, changes) {
                 const dirContent = fs.readdirSync(tag, { withFileTypes: true });
                 // Only consider files with any doc ending.
                 const files = dirContent
-                    .filter(d => d.isFile() && path.extname(d.name) === '.md')
+                    .filter(d => d.isFile() && docFileExtensions.includes(path.extname(d.name)))
                     .map(d => d.name);
                 const dirs = dirContent.filter(d => d.isDirectory()).map(d => d.name);
                 // Append files to file tags.
-                // FIXME: this now also adds files with undesired endings
                 fileTags = fileTags.concat(files);
                 // Append dirs to dir tags. This extends the loop.
                 directoryTags.concat(dirs);
             }
         }
         // Analyze all file tags for doc changes.
-        for (const tag of [...fileTags]) {
+        for (const tag of fileTags) {
             // If any tag appears in the changes, the doc file also has to be in the changes.
             if (!docfileHasChanges && changesBasenames.includes(tag)) {
                 unchangedDocLocal.push(tag);
@@ -29193,21 +29197,30 @@ async function run() {
             core.setFailed(`ghToken === undefined. Aborting`);
             return;
         }
-        // Get directories as arrays. Split at any amount of white space characters.
-        const dirs = core.getInput('userDocsDirs').split(/\s+/);
+        // Split on any whitespace, ',', ';', or combination
+        const splitRegex = /[\s,;]+/;
+        // Get directories as arrays.
+        const dirs = core.getInput('userDocsDirs').split(splitRegex);
         core.info(`User doc directories: ${dirs}`);
-        // TODO: getInput
         const recurseUserDocDirs = core.getInput('recurseUserDocDirs').toLowerCase() === 'true';
         core.info(`Parse user doc directories recursively: ${recurseUserDocDirs}`);
-        const docFileExtensions = (core.getInput('docFileExtensions') || '.md').split(/\s+/);
+        // Parse doc extensions, split, and make sure they start with '.'
+        const docFileExtensions = (core.getInput('docFileExtensions') || 'md')
+            .split(splitRegex)
+            .map(s => (s.startsWith('.') ? s : `.${s}`));
         core.info(`Doc file extensions: ${docFileExtensions}`);
+        // Parse source extensions, split, and make sure they start with '.'
+        const srcFileExtensions = (core.getInput('srcFileExtensions') || 'cpp h txt')
+            .split(splitRegex)
+            .map(s => (s.startsWith('.') ? s : `.${s}`));
+        core.info(`Source file extensions: ${srcFileExtensions}`);
         const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs);
         core.info(`User doc files: ${docFiles}`);
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`Changed files: ${changedFiles}`);
         // ---------------- Check docs and tags ----------------
-        const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles);
+        const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions);
         // ---------------- Process the analysis ----------------
         // Common header to identify this bot's messages.
         const header = '# DocTagChecker\n\n';

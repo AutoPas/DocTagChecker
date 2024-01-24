@@ -87,6 +87,8 @@ describe('action', () => {
           return 'leToken'
         case 'recurseUserDocDirs':
           return 'true'
+        case 'srcFileExtensions':
+          return 'ts,cpp  xyz'
         default:
           return ''
       }
@@ -101,7 +103,8 @@ describe('action', () => {
     expect(getInputMock).toHaveBeenCalledWith('githubToken')
     expect(getInputMock).toHaveBeenCalledWith('recurseUserDocDirs')
     expect(getInputMock).toHaveBeenCalledWith('docFileExtensions')
-    expect(getInputMock).toHaveBeenCalledTimes(4)
+    expect(getInputMock).toHaveBeenCalledWith('srcFileExtensions')
+    expect(getInputMock).toHaveBeenCalledTimes(5)
 
     // Logs from run()
     expect(infoMock).toHaveBeenCalledWith(`User doc directories: ${userDocDir}`)

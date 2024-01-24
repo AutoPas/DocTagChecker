@@ -12,12 +12,20 @@ import {
 /**
  * Get the list of file tags anywhere in the given file.
  * A file tag is defined as a continuous word without `/` or white spaces and terminated by a file ending.
- * TODO: file endings via optional input
  * @param fileContent Content of a file given as string.
+ * @param srcFileExtensions List of file extensions that are considered.
  * @return String[] of tags.
  */
-function extractFileTags(fileContent: string): string[] {
-  return Array.from(fileContent.match(/[^/\s]+\.(h|cpp|txt|ts)\b/g) || [])
+function extractFileTags(
+  fileContent: string,
+  srcFileExtensions: string[]
+): string[] {
+  // Drop the leading '.' and combine everything with '|' as separator
+  const extensionsCombined = srcFileExtensions
+    .map(f => f.substring(1, f.length))
+    .join('|')
+  const srcFileRegex = new RegExp(`[^/\\s]+\\.(${extensionsCombined})\\b`, 'g')
+  return Array.from(fileContent.match(srcFileRegex) || [])
 }
 
 /**
@@ -46,7 +54,9 @@ function extractDirectoryTags(fileContent: string): string[] {
  */
 function checkDocumentation(
   userdocs: string[],
-  changes: string[]
+  changes: string[],
+  docFileExtensions: string[],
+  srcFileExtensions: string[]
 ): { unchangedDoc: Map<string, string[]>; unknownTags: Map<string, string[]> } {
   const unchangedDoc = new Map<string, string[]>()
   const unknownTags = new Map<string, string[]>()
@@ -55,7 +65,7 @@ function checkDocumentation(
 
   for (const docfile of userdocs) {
     const fileContent = fs.readFileSync(docfile, 'utf-8')
-    let fileTags = extractFileTags(fileContent)
+    let fileTags = extractFileTags(fileContent, srcFileExtensions)
     const directoryTags: string[] = extractDirectoryTags(fileContent)
     core.debug(
       `Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`
@@ -80,11 +90,12 @@ function checkDocumentation(
         const dirContent = fs.readdirSync(tag, { withFileTypes: true })
         // Only consider files with any doc ending.
         const files = dirContent
-          .filter(d => d.isFile() && path.extname(d.name) === '.md')
+          .filter(
+            d => d.isFile() && docFileExtensions.includes(path.extname(d.name))
+          )
           .map(d => d.name)
         const dirs = dirContent.filter(d => d.isDirectory()).map(d => d.name)
         // Append files to file tags.
-        // FIXME: this now also adds files with undesired endings
         fileTags = fileTags.concat(files)
         // Append dirs to dir tags. This extends the loop.
         directoryTags.concat(dirs)
@@ -317,17 +328,26 @@ export async function run(): Promise<void> {
       core.setFailed(`ghToken === undefined. Aborting`)
       return
     }
-    // Get directories as arrays. Split at any amount of white space characters.
-    const dirs = core.getInput('userDocsDirs').split(/\s+/)
+    // Split on any whitespace, ',', ';', or combination
+    const splitRegex = /[\s,;]+/
+    // Get directories as arrays.
+    const dirs = core.getInput('userDocsDirs').split(splitRegex)
     core.info(`User doc directories: ${dirs}`)
-    // TODO: getInput
     const recurseUserDocDirs =
       core.getInput('recurseUserDocDirs').toLowerCase() === 'true'
     core.info(`Parse user doc directories recursively: ${recurseUserDocDirs}`)
-    const docFileExtensions = (
-      core.getInput('docFileExtensions') || '.md'
-    ).split(/\s+/)
+    // Parse doc extensions, split, and make sure they start with '.'
+    const docFileExtensions = (core.getInput('docFileExtensions') || 'md')
+      .split(splitRegex)
+      .map(s => (s.startsWith('.') ? s : `.${s}`))
     core.info(`Doc file extensions: ${docFileExtensions}`)
+    // Parse source extensions, split, and make sure they start with '.'
+    const srcFileExtensions = (
+      core.getInput('srcFileExtensions') || 'cpp h txt'
+    )
+      .split(splitRegex)
+      .map(s => (s.startsWith('.') ? s : `.${s}`))
+    core.info(`Source file extensions: ${srcFileExtensions}`)
     const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs)
     core.info(`User doc files: ${docFiles}`)
 
@@ -338,7 +358,9 @@ export async function run(): Promise<void> {
     // ---------------- Check docs and tags ----------------
     const { unchangedDoc, unknownTags } = checkDocumentation(
       docFiles,
-      changedFiles
+      changedFiles,
+      docFileExtensions,
+      srcFileExtensions
     )
 
     // ---------------- Process the analysis ----------------
