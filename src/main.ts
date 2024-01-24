@@ -38,11 +38,12 @@ function extractFileTags(
 function extractDirectoryTags(fileContent: string): string[] {
   return Array.from(
     fileContent
-      // Case insensitive match.
+      // Case insensitive match. Take everything behind the tag
       .split(/Related Files and Folders/i)[1]
-      // Match anything that ends on a '/'
+      // If there is nothing after the tag default to undefined and thus to []
+      // Else match anything that ends on a '/'
       // \S = anything but whitespace
-      .match(/[\S]+\/(?!\S)/g) || []
+      ?.match(/[\S]+\/(?!\S)/g) || []
   )
 }
 
@@ -161,6 +162,8 @@ async function deleteLastComment(
     }
     return -1
   })()
+
+  core.debug(`Comment to delete: ${commentsResponse.data[lastCommentId]}`)
 
   // If we found a previous comment by the bot delete it
   if (lastCommentId !== -1) {

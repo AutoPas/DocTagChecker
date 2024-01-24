@@ -7,9 +7,10 @@
  */
 
 import * as core from '@actions/core'
-// import * as github from '@actions/github'
+import * as github from '@actions/github'
 import * as main from '../src/main'
 import * as path from 'path'
+import * as fs from 'fs'
 
 // Mock the action's main function
 const runMock = jest.spyOn(main, 'run')
@@ -21,8 +22,15 @@ let getInputMock: jest.SpyInstance
 let setFailedMock: jest.SpyInstance
 
 // Mock values
-const userDocDir = '__tests__/'
-const docfile = `${userDocDir}testData/dummyDoc.md`
+const userDocDir = '__tests__/testData/recursionStart/'
+const docfiles = fs
+  .readdirSync(userDocDir, {
+    withFileTypes: true,
+    recursive: true
+  })
+  .filter(f => f.isFile())
+  .map(f => path.join(f.path, f.name))
+const docfile = docfiles.find(s => s.includes('dummyDoc.md'))
 const changedFile = 'src/utils.ts'
 
 // Mock the github context
@@ -54,8 +62,21 @@ jest.mock('@actions/github', () => ({
           listComments: jest.fn().mockImplementation(() => {
             return {
               data: [
-                { user: 'user1', body: 'body1', id: 0 },
-                { user: 'user2', body: 'body2', id: 1 }
+                {
+                  user: {
+                    login: 'user1'
+                  },
+                  body: 'body1',
+                  id: 0
+                },
+                {
+                  user: {
+                    login: 'github-actions[bot]'
+                  },
+                  body: '# DocTagChecker\n\nLoremIpsum',
+                  id: 1
+                },
+                { user: 'user2', body: 'body2', id: 2 }
               ]
             }
           }),
@@ -108,7 +129,14 @@ describe('action', () => {
 
     // Logs from run()
     expect(infoMock).toHaveBeenCalledWith(`User doc directories: ${userDocDir}`)
-    expect(infoMock).toHaveBeenCalledWith(`User doc files: ${docfile}`)
+    expect(infoMock).toHaveBeenCalledWith(
+      `Parse user doc directories recursively: true`
+    )
+    expect(infoMock).toHaveBeenCalledWith(`Doc file extensions: .md`)
+    expect(infoMock).toHaveBeenCalledWith(
+      `Source file extensions: .ts,.cpp,.xyz`
+    )
+    expect(infoMock).toHaveBeenCalledWith(`User doc files: ${docfiles}`)
     expect(infoMock).toHaveBeenCalledWith(`Changed files: ${changedFile}`)
 
     // Logs from checkDocumentation()
@@ -118,7 +146,11 @@ describe('action', () => {
       'main.ts',
       'utils.ts'
     ]
-    const dummyDocDirTags = ['fake/path/', 'script/']
+    const dummyDocDirTags = [
+      'fake/path/',
+      'script/',
+      '__tests__/testData/taggedFolder/'
+    ]
     // 'dummyDoc.md' should not be in file tags because it has the wrong extension.
     // '__test__/' should not be in dir tags because it appears before 'Related files and folders'.
     expect(debugMock).toHaveBeenCalledWith(
@@ -136,22 +168,11 @@ describe('action', () => {
         changedFile
       )}`
     )
-
-    // Verify that all of the core library functions were called correctly
-    // expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    // expect(debugMock).toHaveBeenNthCalledWith(
-    //   2,
-    //   expect.stringMatching(timeRegex)
-    // )
-    // expect(debugMock).toHaveBeenNthCalledWith(
-    //   3,
-    //   expect.stringMatching(timeRegex)
-    // )
-    // expect(setOutputMock).toHaveBeenNthCalledWith(
-    //   1,
-    //   'time',
-    //   expect.stringMatching(timeRegex)
-    // )
+    expect(debugMock).toHaveBeenCalledWith(
+      `Comment to delete: ${
+        (await github.getOctokit('leToken').rest.issues.listComments()).data[1]
+      }`
+    )
   })
 
   it('run(): Invalid action input', async () => {
