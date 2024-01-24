@@ -92,7 +92,7 @@ function checkDocumentation(
     }
 
     // Analyze all file tags for doc changes.
-    for (const tag of [...fileTags]) {
+    for (const tag of fileTags) {
       // If any tag appears in the changes, the doc file also has to be in the changes.
       if (!docfileHasChanges && changesBasenames.includes(tag)) {
         unchangedDocLocal.push(tag)
