@@ -75,4 +75,3 @@ The general development workflow should look as follows:
     ```bash
     script/release
     ```
-
