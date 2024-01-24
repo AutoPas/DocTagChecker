@@ -87,11 +87,13 @@ describe('action', () => {
     })
 
     await main.run()
+    // Expect that the action has terminated gracefully.
+    expect(runMock).toHaveReturned()
     expect(setFailedMock).not.toHaveBeenCalled()
+    // Expect input to be used.
     expect(getInputMock).toHaveBeenCalledWith('userDocsDirs')
     expect(getInputMock).toHaveBeenCalledWith('githubToken')
     expect(getInputMock).toHaveBeenCalledTimes(2)
-    expect(runMock).toHaveReturned()
 
     // TODO: lots of expectation
 
