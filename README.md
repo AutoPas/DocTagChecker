@@ -58,19 +58,19 @@ The general development workflow should look as follows:
     git checkout -b myAwsomeUpdate
     ```
 
-2. Implement your update in [`src/`](src) in TypeScript.
+1. Implement your update in [`src/`](src) in TypeScript.
 
-    2.1 If you need new input values for the action, add them to [`action.yml`](action.yml)
-3. Add tests to [`__tests__`](__tests__).
-4. Format, build, and run the tests.
+    If you need new input values for the action, add them to [`action.yml`](action.yml)
+1. Add tests to [`__tests__`](__tests__).
+1. Format, build, and run the tests.
 
     ```bash
     npm run all
     ```
 
     This is critical. Without this step the JavaScript code, which is what's actually run, is not built and nothing changes!
-5. Commit, push, review, merge to main.
-6. (If applicable) Create a new release using the [release script](script/release).
+1. Commit, push, review, merge to main.
+1. (If applicable) Create a new release using the [release script](script/release).
 
     ```bash
     script/release

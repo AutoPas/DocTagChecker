@@ -1,10 +1,10 @@
-# Unordered list style
+# All items in unordered lists should start with '-'
 MD004:
   style: dash
 
 # Disable line limits
 MD013: false
 
-# Ordered list item prefix
+# All items in ordered list should be numbered as '1.'
 MD029:
   style: one
