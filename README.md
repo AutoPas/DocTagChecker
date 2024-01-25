@@ -29,8 +29,15 @@ jobs:
         uses: AutoPas/DocTagChecker@main  # substitute main for a release tag
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
-          # multiple paths are separated by whitespace
+          # multiple paths are separated by whitespace or ','
           userDocsDirs: paths/to/ your/doc/dir relative/to/repo/root
+          # Optional inputs with defaults:
+          # Check userDocsDirs recursively.
+          recurseUserDocDirs: false
+          # File extensions for files to be considered documentation.
+          docFileExtensions: md
+          # File extensions for files to be considered source code.
+          srcFileExtensions: cpp h txt
 ```
 
 ### Tag your Documentation
