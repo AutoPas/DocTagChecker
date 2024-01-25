@@ -28942,6 +28942,15 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const utils_1 = __nccwpck_require__(1314);
 /**
+ * Checks if file extensions start with a '.' and then only consist of letters and numbers.
+ * @param extensions Array of extensions to check.
+ * @return True if extension matches the sane pattern.
+ */
+function extensionsIsSane(extension) {
+    // The regex checks if e starts with '.' and only has letters or numbers afterwards until the end.
+    return /^\.[a-zA-Z0-9]+$/.test(extension);
+}
+/**
  * Get the list of file tags anywhere in the given file.
  * A file tag is defined as a continuous word without `/` or white spaces and terminated by a file ending.
  * @param fileContent Content of a file given as string.
@@ -29196,8 +29205,7 @@ async function run() {
         const ghToken = core.getInput('githubToken');
         // Sanity check
         if (ghToken === undefined) {
-            core.setFailed(`ghToken === undefined. Aborting`);
-            return;
+            throw new Error(`ghToken === undefined. Aborting`);
         }
         // Split on any whitespace, ',', ';', or combination
         const splitRegex = /[\s,;]+/;
@@ -29210,11 +29218,17 @@ async function run() {
         const docFileExtensions = (core.getInput('docFileExtensions') || 'md')
             .split(splitRegex)
             .map(s => (s.startsWith('.') ? s : `.${s}`));
+        if (!docFileExtensions.every(e => extensionsIsSane(e))) {
+            throw new Error(`At least one doc extension contains something other than numbers or letters.\ndocFileExtensions: ${docFileExtensions}`);
+        }
         core.info(`Doc file extensions: ${docFileExtensions}`);
         // Parse source extensions, split, and make sure they start with '.'
         const srcFileExtensions = (core.getInput('srcFileExtensions') || 'cpp h txt')
             .split(splitRegex)
             .map(s => (s.startsWith('.') ? s : `.${s}`));
+        if (!srcFileExtensions.every(e => extensionsIsSane(e))) {
+            throw new Error(`At least one src extension contains something other than numbers or letters.\nsrcFileExtensions: ${srcFileExtensions}`);
+        }
         core.info(`Source file extensions: ${srcFileExtensions}`);
         const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs);
         core.info(`User doc files: ${docFiles}`);
