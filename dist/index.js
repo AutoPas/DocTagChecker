@@ -29211,7 +29211,7 @@ async function run() {
         const splitRegex = /[\s,;]+/;
         // Get directories as arrays.
         const dirs = core.getInput('userDocsDirs').split(splitRegex);
-        core.info(`User doc directories: ${dirs}`);
+        core.info(`User doc directories:${dirs.reduce((acc, a) => `${acc}\n${a}`, '')}`);
         const recurseUserDocDirs = core.getInput('recurseUserDocDirs').toLowerCase() === 'true';
         core.info(`Parse user doc directories recursively: ${recurseUserDocDirs}`);
         // Parse doc extensions, split, and make sure they start with '.'
@@ -29231,10 +29231,10 @@ async function run() {
         }
         core.info(`Source file extensions: ${srcFileExtensions}`);
         const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs);
-        core.info(`User doc files: ${docFiles}`);
+        core.info(`User doc files:${docFiles.reduce((acc, a) => `${acc}\n${a}`, '')}`);
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
-        core.info(`Changed files: ${changedFiles}`);
+        core.info(`Changed files:${changedFiles.reduce((acc, a) => `${acc}\n${a}`, '')}`);
         // ------------------------- Check docs and tags --------------------------
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions);
         // ------------------------- Process the analysis -------------------------
