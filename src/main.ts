@@ -345,7 +345,7 @@ export async function run(): Promise<void> {
     // Get directories as arrays.
     const dirs = core.getInput('userDocsDirs').split(splitRegex)
     core.info(
-      `User doc directories:${dirs.reduce((acc, a) => `${acc}\n${a}`, '')}`
+      `User doc directories:${dirs.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
     const recurseUserDocDirs =
       core.getInput('recurseUserDocDirs').toLowerCase() === 'true'
@@ -374,13 +374,13 @@ export async function run(): Promise<void> {
     core.info(`Source file extensions: ${srcFileExtensions}`)
     const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs)
     core.info(
-      `User doc files:${docFiles.reduce((acc, a) => `${acc}\n${a}`, '')}`
+      `User doc files:${docFiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
 
     // Get changes from the PR
     const changedFiles = await getChangedFiles(ghToken)
     core.info(
-      `Changed files:${changedFiles.reduce((acc, a) => `${acc}\n${a}`, '')}`
+      `Changed files:${changedFiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
 
     // ------------------------- Check docs and tags --------------------------

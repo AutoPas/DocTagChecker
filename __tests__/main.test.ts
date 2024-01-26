@@ -129,7 +129,7 @@ describe('action', () => {
 
     // Logs from run()
     expect(infoMock).toHaveBeenCalledWith(
-      `User doc directories:\n${userDocDir}`
+      `User doc directories:\n  ${userDocDir}`
     )
     expect(infoMock).toHaveBeenCalledWith(
       `Parse user doc directories recursively: true`
@@ -139,9 +139,9 @@ describe('action', () => {
       `Source file extensions: .ts,.cpp,.xyz`
     )
     expect(infoMock).toHaveBeenCalledWith(
-      `User doc files:${docfiles.reduce((acc, a) => `${acc}\n${a}`, '')}`
+      `User doc files:${docfiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
-    expect(infoMock).toHaveBeenCalledWith(`Changed files:\n${changedFile}`)
+    expect(infoMock).toHaveBeenCalledWith(`Changed files:\n  ${changedFile}`)
 
     // Logs from checkDocumentation()
     const dummyDocFileTags = [
