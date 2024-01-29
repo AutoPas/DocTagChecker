@@ -10,3 +10,4 @@ All tags that do not exist should contain 'fake' to help the unit tests.
 - utils.ts
 - script/
 - __tests__/testData/taggedFolder/
+- script/
