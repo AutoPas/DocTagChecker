@@ -6,12 +6,13 @@ import {
   assertNonNull,
   findFileByName,
   getUrlToChanges,
-  getUrlToFile
+  getUrlToFile,
+  uniqueFilter
 } from './utils'
 
 /**
  * Checks if file extensions start with a '.' and then only consist of letters and numbers.
- * @param extensions Array of extensions to check.
+ * @param extension The extensions to check.
  * @return True if extension matches the sane pattern.
  */
 function extensionsIsSane(extension: string): boolean {
@@ -35,7 +36,7 @@ function extractFileTags(
     .map(f => f.substring(1, f.length))
     .join('|')
   const srcFileRegex = new RegExp(`[^/\\s]+\\.(${extensionsCombined})\\b`, 'g')
-  return Array.from(fileContent.match(srcFileRegex) || [])
+  return Array.from(fileContent.match(srcFileRegex)?.filter(uniqueFilter) || [])
 }
 
 /**
@@ -53,7 +54,8 @@ function extractDirectoryTags(fileContent: string): string[] {
       // If there is nothing after the tag default to undefined and thus to []
       // Else match anything that ends on a '/'
       // \S = anything but whitespace
-      ?.match(/[\S]+\/(?!\S)/g) || []
+      ?.match(/[\S]+\/(?!\S)/g)
+      ?.filter(uniqueFilter) || []
   )
 }
 
@@ -94,7 +96,7 @@ function checkDocumentation(
     // Append the content of all directories to the tags.
     for (const tag of directoryTags) {
       if (!fs.existsSync(tag)) {
-        // If the dir can not be found it's an unknown tag.
+        // If the dir can not be found it's an unknown tag. Duplicates here are intentional.
         unknownTagsLocal.push(tag)
       } else {
         // Read the content of the directory and split it in files and dirs.
@@ -112,6 +114,9 @@ function checkDocumentation(
         directoryTags.concat(dirs)
       }
     }
+
+    // Make sure all tags are only listed once
+    fileTags = fileTags.filter(uniqueFilter)
 
     // Analyze all file tags for doc changes.
     for (const tag of fileTags) {

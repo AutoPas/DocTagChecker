@@ -3,10 +3,11 @@
  */
 
 import {
+  assertNonNull,
   getUrlToFile,
   getUrlToChanges,
   findFileByName,
-  assertNonNull
+  uniqueFilter
 } from '../src/utils'
 import * as github from '@actions/github'
 import { expect } from '@jest/globals'
@@ -131,5 +132,15 @@ describe('utils.ts context dependent', () => {
 
     // Calling the function with this context should throw an error.
     expect(() => getUrlToChanges(filePath)).toThrow()
+  })
+
+  it('uniqueFilter(): Test functionality', () => {
+    const noDuplicates = [0, 1, 2, 3, 4]
+    const noDuplicatesFiltered = noDuplicates.filter(uniqueFilter)
+    expect(noDuplicatesFiltered).toEqual(noDuplicates)
+
+    const duplicates = [0, 1, 2, 2, 3, 4, 2]
+    const duplicatesFiltered = duplicates.filter(uniqueFilter)
+    expect(duplicatesFiltered).toEqual(noDuplicates)
   })
 })
