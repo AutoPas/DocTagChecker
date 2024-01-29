@@ -4,6 +4,20 @@ import * as github from '@actions/github'
 import crypto from 'crypto'
 
 /**
+ * Filter function to remove duplicates in an array.
+ * @param value Value to check for duplication
+ * @param index Known index of first occurrence of value.
+ * @param container Array to filter.
+ */
+export function uniqueFilter<T>(
+  value: T,
+  index: number,
+  container: T[]
+): boolean {
+  return container.indexOf(value) === index
+}
+
+/**
  * Retrieves the value of an optional type.
  * If value is undefined or null an Error is thrown.
  * @param value - The input value of type T | undefined | null

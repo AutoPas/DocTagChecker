@@ -28943,7 +28943,7 @@ const path = __importStar(__nccwpck_require__(1017));
 const utils_1 = __nccwpck_require__(1314);
 /**
  * Checks if file extensions start with a '.' and then only consist of letters and numbers.
- * @param extensions Array of extensions to check.
+ * @param extension The extensions to check.
  * @return True if extension matches the sane pattern.
  */
 function extensionsIsSane(extension) {
@@ -28963,7 +28963,7 @@ function extractFileTags(fileContent, srcFileExtensions) {
         .map(f => f.substring(1, f.length))
         .join('|');
     const srcFileRegex = new RegExp(`[^/\\s]+\\.(${extensionsCombined})\\b`, 'g');
-    return Array.from(fileContent.match(srcFileRegex) || []);
+    return Array.from(fileContent.match(srcFileRegex)?.filter(utils_1.uniqueFilter) || []);
 }
 /**
  * Get the list of directory tags in the given file.
@@ -28979,7 +28979,8 @@ function extractDirectoryTags(fileContent) {
         // If there is nothing after the tag default to undefined and thus to []
         // Else match anything that ends on a '/'
         // \S = anything but whitespace
-        ?.match(/[\S]+\/(?!\S)/g) || []);
+        ?.match(/[\S]+\/(?!\S)/g)
+        ?.filter(utils_1.uniqueFilter) || []);
 }
 /**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
@@ -29008,7 +29009,7 @@ function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensi
         // Append the content of all directories to the tags.
         for (const tag of directoryTags) {
             if (!fs.existsSync(tag)) {
-                // If the dir can not be found it's an unknown tag.
+                // If the dir can not be found it's an unknown tag. Duplicates here are intentional.
                 unknownTagsLocal.push(tag);
             }
             else {
@@ -29025,6 +29026,8 @@ function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensi
                 directoryTags.concat(dirs);
             }
         }
+        // Make sure all tags are only listed once
+        fileTags = fileTags.filter(utils_1.uniqueFilter);
         // Analyze all file tags for doc changes.
         for (const tag of fileTags) {
             // If any tag appears in the changes, the doc file also has to be in the changes.
@@ -29303,11 +29306,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = exports.assertNonNull = void 0;
+exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = exports.assertNonNull = exports.uniqueFilter = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const github = __importStar(__nccwpck_require__(5438));
 const crypto_1 = __importDefault(__nccwpck_require__(6113));
+/**
+ * Filter function to remove duplicates in an array.
+ * @param value Value to check for duplication
+ * @param index Known index of first occurrence of value.
+ * @param container Array to filter.
+ */
+function uniqueFilter(value, index, container) {
+    return container.indexOf(value) === index;
+}
+exports.uniqueFilter = uniqueFilter;
 /**
  * Retrieves the value of an optional type.
  * If value is undefined or null an Error is thrown.
