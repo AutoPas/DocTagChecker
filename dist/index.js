@@ -28967,9 +28967,10 @@ function extractFileTags(fileContent, srcFileExtensions) {
 }
 /**
  * Get the list of directory tags in the given file.
- * Directory tags are only considered after the string "Related Files and Folders".
+ * Directory tags are only considered after the pattern given in dirTagSectionRegexStr.
  * A directory tag is defined as a string of non white space characters that ends on '/'.
  * @param fileContent Content of a file given as string.
+ * @param dirTagSectionRegexStr String representation of the regex used to identify the part where directory tags are expected.
  * @return String[] of tags.
  */
 function extractDirectoryTags(fileContent, dirTagSectionRegexStr) {
@@ -28988,8 +28989,11 @@ function extractDirectoryTags(fileContent, dirTagSectionRegexStr) {
 }
 /**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
- * @param userdocs - An array of paths to documentation files.
- * @param changes - An array of paths to files that have been changed.
+ * @param userdocs An array of paths to documentation files.
+ * @param changes An array of paths to files that have been changed.
+ * @param docFileExtensions File extensions for documentation files.
+ * @param srcFileExtensions File extensions for source files.
+ * @param dirTagSectionRegexStr String representation of the regex used to identify the part where directory tags are expected.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
 function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensions, dirTagSectionRegexStr) {
@@ -29176,6 +29180,7 @@ async function getChangedFiles(ghToken) {
 /**
  * Get list of doc files in the immediate directory. No recursion!
  * @param directories Array of directory paths to search for documentation files.
+ * @param docExtensions File extensions for documentation files.
  * @param recursive If true subdirectories are also searched.
  * @return Array of paths to directory files.
  */
