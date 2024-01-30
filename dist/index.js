@@ -28972,10 +28972,14 @@ function extractFileTags(fileContent, srcFileExtensions) {
  * @param fileContent Content of a file given as string.
  * @return String[] of tags.
  */
-function extractDirectoryTags(fileContent) {
+function extractDirectoryTags(fileContent, dirTagSectionRegexStr) {
+    // Decompose the provided regex string into the pattern [1] and potential parameters [2]
+    const decomposedRegex = dirTagSectionRegexStr.match(/\/(.+)\/(.*)/);
+    // if any of the decomposed elements is null insert the empty string
+    const dirTagSectionRegex = new RegExp(decomposedRegex?.[1] ?? '', decomposedRegex?.[2] ?? '');
     return Array.from(fileContent
         // Case insensitive match. Take everything behind the tag
-        .split(/Related Files and Folders/i)[1]
+        .split(dirTagSectionRegex)[1]
         // If there is nothing after the tag default to undefined and thus to []
         // Else match anything that ends on a '/'
         // \S = anything but whitespace
@@ -28988,14 +28992,14 @@ function extractDirectoryTags(fileContent) {
  * @param changes - An array of paths to files that have been changed.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
-function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensions) {
+function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensions, dirTagSectionRegexStr) {
     const unchangedDoc = new Map();
     const unknownTags = new Map();
     const changesBasenames = changes.map(f => path.basename(f));
     for (const docfile of userdocs) {
         const fileContent = fs.readFileSync(docfile, 'utf-8');
         let fileTags = extractFileTags(fileContent, srcFileExtensions);
-        const directoryTags = extractDirectoryTags(fileContent);
+        const directoryTags = extractDirectoryTags(fileContent, dirTagSectionRegexStr);
         core.debug(`Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`);
         const docfileHasChanges = changesBasenames.includes(path.basename(docfile));
         const unknownTagsLocal = [];
@@ -29235,11 +29239,13 @@ async function run() {
         core.info(`Source file extensions: ${srcFileExtensions}`);
         const docFiles = getDocFiles(dirs, docFileExtensions, recurseUserDocDirs);
         core.info(`User doc files:${docFiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`);
+        const dirTagSectionRegexStr = core.getInput('dirTagSectionRegex') || '/Related Files and Folders/i';
+        core.info(`Regular expression identifying directory tag section: ${dirTagSectionRegexStr}`);
         // Get changes from the PR
         const changedFiles = await getChangedFiles(ghToken);
         core.info(`Changed files:${changedFiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`);
         // ------------------------- Check docs and tags --------------------------
-        const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions);
+        const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions, dirTagSectionRegexStr);
         // ------------------------- Process the analysis -------------------------
         // Common header to identify this bot's messages.
         const header = '# DocTagChecker\n\n';
