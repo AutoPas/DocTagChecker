@@ -144,7 +144,9 @@ describe('action', () => {
     expect(infoMock).toHaveBeenCalledWith(
       `User doc files:${docfiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
-    // expect(infoMock).toHaveBeenCalledWith(`Regular expression identifying directory tag section: /other stuff/i`)
+    expect(infoMock).toHaveBeenCalledWith(
+      `Regular expression identifying directory tag section: /other stuff/i`
+    )
     expect(infoMock).toHaveBeenCalledWith(`Changed files:\n  ${changedFile}`)
 
     // Logs from checkDocumentation()
