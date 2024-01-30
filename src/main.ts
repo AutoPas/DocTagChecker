@@ -41,16 +41,27 @@ function extractFileTags(
 
 /**
  * Get the list of directory tags in the given file.
- * Directory tags are only considered after the string "Related Files and Folders".
+ * Directory tags are only considered after the pattern given in dirTagSectionRegexStr.
  * A directory tag is defined as a string of non white space characters that ends on '/'.
  * @param fileContent Content of a file given as string.
+ * @param dirTagSectionRegexStr String representation of the regex used to identify the part where directory tags are expected.
  * @return String[] of tags.
  */
-function extractDirectoryTags(fileContent: string): string[] {
+function extractDirectoryTags(
+  fileContent: string,
+  dirTagSectionRegexStr: string
+): string[] {
+  // Decompose the provided regex string into the pattern [1] and potential parameters [2]
+  const decomposedRegex = dirTagSectionRegexStr.match(/\/(.+)\/(.*)/)
+  // if any of the decomposed elements is null insert the empty string
+  const dirTagSectionRegex = new RegExp(
+    decomposedRegex?.[1] ?? '',
+    decomposedRegex?.[2] ?? ''
+  )
   return Array.from(
     fileContent
       // Case insensitive match. Take everything behind the tag
-      .split(/Related Files and Folders/i)[1]
+      .split(dirTagSectionRegex)[1]
       // If there is nothing after the tag default to undefined and thus to []
       // Else match anything that ends on a '/'
       // \S = anything but whitespace
@@ -61,15 +72,19 @@ function extractDirectoryTags(fileContent: string): string[] {
 
 /**
  * Checks that if any tagged source file was changed, its corresponding doc file was changed too.
- * @param userdocs - An array of paths to documentation files.
- * @param changes - An array of paths to files that have been changed.
+ * @param userdocs An array of paths to documentation files.
+ * @param changes An array of paths to files that have been changed.
+ * @param docFileExtensions File extensions for documentation files.
+ * @param srcFileExtensions File extensions for source files.
+ * @param dirTagSectionRegexStr String representation of the regex used to identify the part where directory tags are expected.
  * @returns An exit code: 0 if no errors were found, 1 if errors were found.
  */
 function checkDocumentation(
   userdocs: string[],
   changes: string[],
   docFileExtensions: string[],
-  srcFileExtensions: string[]
+  srcFileExtensions: string[],
+  dirTagSectionRegexStr: string
 ): { unchangedDoc: Map<string, string[]>; unknownTags: Map<string, string[]> } {
   const unchangedDoc = new Map<string, string[]>()
   const unknownTags = new Map<string, string[]>()
@@ -79,7 +94,10 @@ function checkDocumentation(
   for (const docfile of userdocs) {
     const fileContent = fs.readFileSync(docfile, 'utf-8')
     let fileTags = extractFileTags(fileContent, srcFileExtensions)
-    const directoryTags: string[] = extractDirectoryTags(fileContent)
+    const directoryTags: string[] = extractDirectoryTags(
+      fileContent,
+      dirTagSectionRegexStr
+    )
     core.debug(
       `Found tags in ${docfile}: | File Tags: ${fileTags} | Directory Tags: ${directoryTags} |`
     )
@@ -297,6 +315,7 @@ async function getChangedFiles(ghToken: string): Promise<string[]> {
 /**
  * Get list of doc files in the immediate directory. No recursion!
  * @param directories Array of directory paths to search for documentation files.
+ * @param docExtensions File extensions for documentation files.
  * @param recursive If true subdirectories are also searched.
  * @return Array of paths to directory files.
  */
@@ -382,6 +401,12 @@ export async function run(): Promise<void> {
       `User doc files:${docFiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
     )
 
+    const dirTagSectionRegexStr =
+      core.getInput('dirTagSectionRegex') || '/Related Files and Folders/i'
+    core.info(
+      `Regular expression identifying directory tag section: ${dirTagSectionRegexStr}`
+    )
+
     // Get changes from the PR
     const changedFiles = await getChangedFiles(ghToken)
     core.info(
@@ -393,7 +418,8 @@ export async function run(): Promise<void> {
       docFiles,
       changedFiles,
       docFileExtensions,
-      srcFileExtensions
+      srcFileExtensions,
+      dirTagSectionRegexStr
     )
 
     // ------------------------- Process the analysis -------------------------

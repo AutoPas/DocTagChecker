@@ -17,9 +17,13 @@ inputs:
     required: true
     default: 'docs'
   recurseUserDocDirs:
-    description: 'Whether to also look for user doc files in all subdirectories of the given directories'
+    description: 'Whether to also look for user doc files in all subdirectories of the given directories.'
     required: false
     default: false
+  dirTagSectionRegex:
+    description: 'The regular expression that is used to identify the section of a documentation file where the tool starts looking for directory tags.'
+    required: false
+    default: '/Related Files and Folders/i'
   docFileExtensions:
     description: 'File extensions that are considered for doc files.'
     required: false

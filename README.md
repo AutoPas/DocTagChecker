@@ -32,6 +32,7 @@ jobs:
           # multiple paths are separated by whitespace or ','
           userDocsDirs: paths/to/ your/doc/dir relative/to/repo/root
           # Optional inputs with defaults:
+          dirTagSectionRegex: /Related Files and Folders/i
           # Check userDocsDirs recursively.
           recurseUserDocDirs: false
           # File extensions for files to be considered documentation.

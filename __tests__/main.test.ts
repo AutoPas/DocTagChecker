@@ -110,6 +110,8 @@ describe('action', () => {
           return 'true'
         case 'srcFileExtensions':
           return 'ts,cpp  xyz'
+        case 'dirTagSectionRegex':
+          return '/other stuff/i'
         default:
           return ''
       }
@@ -125,7 +127,8 @@ describe('action', () => {
     expect(getInputMock).toHaveBeenCalledWith('recurseUserDocDirs')
     expect(getInputMock).toHaveBeenCalledWith('docFileExtensions')
     expect(getInputMock).toHaveBeenCalledWith('srcFileExtensions')
-    expect(getInputMock).toHaveBeenCalledTimes(5)
+    expect(getInputMock).toHaveBeenCalledWith('dirTagSectionRegex')
+    expect(getInputMock).toHaveBeenCalledTimes(6)
 
     // Logs from run()
     expect(infoMock).toHaveBeenCalledWith(
@@ -140,6 +143,9 @@ describe('action', () => {
     )
     expect(infoMock).toHaveBeenCalledWith(
       `User doc files:${docfiles.reduce((acc, a) => `${acc}\n  ${a}`, '')}`
+    )
+    expect(infoMock).toHaveBeenCalledWith(
+      `Regular expression identifying directory tag section: /other stuff/i`
     )
     expect(infoMock).toHaveBeenCalledWith(`Changed files:\n  ${changedFile}`)
 
