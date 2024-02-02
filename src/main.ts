@@ -35,7 +35,14 @@ function extractFileTags(
   const extensionsCombined = srcFileExtensions
     .map(f => f.substring(1, f.length))
     .join('|')
-  const srcFileRegex = new RegExp(`[^/\\s]+\\.(${extensionsCombined})\\b`, 'g')
+  // Regex explanation:
+  //  - Limited by word boundaries (\b) at the start and end
+  //  - Match more than one (+) non `/` or white space (\s) characters
+  //  - Followed by a `.` and then the possible extensions
+  const srcFileRegex = new RegExp(
+    `\\b[^/\\s]+\\.(${extensionsCombined})\\b`,
+    'g'
+  )
   return Array.from(fileContent.match(srcFileRegex)?.filter(uniqueFilter) || [])
 }
 
