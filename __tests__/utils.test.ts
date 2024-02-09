@@ -3,6 +3,7 @@
  */
 
 import {
+  stripURLs,
   assertNonNull,
   getUrlToFile,
   getUrlToChanges,
@@ -142,5 +143,12 @@ describe('utils.ts context dependent', () => {
     const duplicates = [0, 1, 2, 2, 3, 4, 2]
     const duplicatesFiltered = duplicates.filter(uniqueFilter)
     expect(duplicatesFiltered).toEqual(noDuplicates)
+  })
+
+  it('stripURLs(): Test stripping', () => {
+    const textWithoutURL = 'some text'
+    const textWithURL = 'some [text](leURL)'
+    const textStripped = stripURLs(textWithURL)
+    expect(textWithoutURL).toEqual(textStripped)
   })
 })
