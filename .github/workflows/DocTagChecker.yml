@@ -1,0 +1,25 @@
+name: DocTagChecker
+
+on:
+  pull_request
+
+jobs:
+  DocTagCheck:
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check for missing userdoc updates
+        uses: AutoPas/DocTagChecker@footerMessage
+        with: 
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          # multiple paths are separated by whitespace or ','
+          userDocsDirs: __tests__/testData/
+          # Optional inputs with defaults:
+          # DON'T use '/other stuff/i' as it contains intentional fakes
+          # dirTagSectionRegex: 
+          # Check userDocsDirs recursively.
+          recurseUserDocDirs: true
+          # File extensions for files to be considered documentation.
+          docFileExtensions: md
+          # File extensions for files to be considered source code.
+          srcFileExtensions: ts
