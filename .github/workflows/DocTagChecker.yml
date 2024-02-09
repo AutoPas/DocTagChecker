@@ -22,7 +22,7 @@ jobs:
           echo "-----------------------------------"
       - name: Check for missing userdoc updates
         # Use the version from the branch that triggered the workflow
-        uses: AutoPas/DocTagChecker@${BRANCH_NAME}
+        uses: AutoPas/DocTagChecker@${{ github.head_ref || github.ref_name }}
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           # multiple paths are separated by whitespace or ','
