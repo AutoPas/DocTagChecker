@@ -28942,6 +28942,11 @@ const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const utils_1 = __nccwpck_require__(1314);
 /**
+ * The URL to the project.
+ * Mainly used in the PR messages.
+ */
+const projectURL = 'https://github.com/AutoPas/DocTagChecker';
+/**
  * Checks if file extensions start with a '.' and then only consist of letters and numbers.
  * @param extension The extensions to check.
  * @return True if extension matches the sane pattern.
@@ -29063,6 +29068,10 @@ function checkDocumentation(userdocs, changes, docFileExtensions, srcFileExtensi
 /**
  * Remove last comment made by this action to avoid spam.
  * If no previous comment can be found do nothing.
+ *
+ * The header is used as a identification tag to find the correct message.
+ * This comparison is done ignoring any embedded URLs.
+ *
  * @param ghToken GitHub Token
  * @param header Header to identify the last bot message.
  * @returns {Promise<void>} Resolves when the function is complete.
@@ -29080,7 +29089,7 @@ async function deleteLastComment(ghToken, header) {
         const expectedUser = 'github-actions[bot]';
         for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
             if ((0, utils_1.assertNonNull)(commentsResponse.data[i].user).login === expectedUser &&
-                (0, utils_1.assertNonNull)(commentsResponse.data[i].body).includes(header)) {
+                (0, utils_1.stripURLs)((0, utils_1.assertNonNull)(commentsResponse.data[i].body)).includes((0, utils_1.stripURLs)(header))) {
                 return commentsResponse.data[i].id;
             }
         }
@@ -29147,8 +29156,8 @@ The following doc files are unchanged, but some related sources were changed. Ma
         }
     }
     // Add footer with information about the bot.
-    message += `---\n'
-<sub>[What is this?](https://github.com/AutoPas/DocTagChecker)</sub>`;
+    message += `---
+<sub>[What is this?](${projectURL})</sub>`;
     return message;
 }
 /**
@@ -29260,7 +29269,7 @@ async function run() {
         const { unchangedDoc, unknownTags } = checkDocumentation(docFiles, changedFiles, docFileExtensions, srcFileExtensions, dirTagSectionRegexStr);
         // ------------------------- Process the analysis -------------------------
         // Common header to identify this bot's messages.
-        const header = '# DocTagChecker\n\n';
+        const header = `# [DocTagChecker](${projectURL})\n\n`;
         // Remove the last comment to avoid spam.
         await deleteLastComment(ghToken, header);
         // Set outputs for other workflow steps to use.
@@ -29324,11 +29333,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = exports.assertNonNull = exports.uniqueFilter = void 0;
+exports.getUrlToChanges = exports.getUrlToFile = exports.findFileByName = exports.assertNonNull = exports.uniqueFilter = exports.stripURLs = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
 const path = __importStar(__nccwpck_require__(1017));
 const github = __importStar(__nccwpck_require__(5438));
 const crypto_1 = __importDefault(__nccwpck_require__(6113));
+/**
+ * Strips all named URLs down to only the name.
+ * '[leName](someURL)' -> 'leName'
+ * @param text The text to strip.
+ * @returns Stripped text
+ */
+function stripURLs(text) {
+    return text.replace(/\[(.*)\]\(.*\)/g, '$1');
+}
+exports.stripURLs = stripURLs;
 /**
  * Filter function to remove duplicates in an array.
  * @param value Value to check for duplication

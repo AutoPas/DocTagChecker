@@ -7,8 +7,15 @@ import {
   findFileByName,
   getUrlToChanges,
   getUrlToFile,
-  uniqueFilter
+  uniqueFilter,
+  stripURLs
 } from './utils'
+
+/**
+ * The URL to the project.
+ * Mainly used in the PR messages.
+ */
+const projectURL = 'https://github.com/AutoPas/DocTagChecker'
 
 /**
  * Checks if file extensions start with a '.' and then only consist of letters and numbers.
@@ -173,6 +180,10 @@ function checkDocumentation(
 /**
  * Remove last comment made by this action to avoid spam.
  * If no previous comment can be found do nothing.
+ *
+ * The header is used as a identification tag to find the correct message.
+ * This comparison is done ignoring any embedded URLs.
+ *
  * @param ghToken GitHub Token
  * @param header Header to identify the last bot message.
  * @returns {Promise<void>} Resolves when the function is complete.
@@ -195,7 +206,9 @@ async function deleteLastComment(
     for (let i = commentsResponse.data.length - 1; i >= 0; --i) {
       if (
         assertNonNull(commentsResponse.data[i].user).login === expectedUser &&
-        assertNonNull(commentsResponse.data[i].body).includes(header)
+        stripURLs(assertNonNull(commentsResponse.data[i].body)).includes(
+          stripURLs(header)
+        )
       ) {
         return commentsResponse.data[i].id
       }
@@ -280,8 +293,8 @@ The following doc files are unchanged, but some related sources were changed. Ma
   }
 
   // Add footer with information about the bot.
-  message += `---\n
-<sub>[What is this?](https://github.com/AutoPas/DocTagChecker)</sub>`
+  message += `---
+<sub>[What is this?](${projectURL})</sub>`
 
   return message
 }
@@ -435,7 +448,7 @@ export async function run(): Promise<void> {
 
     // ------------------------- Process the analysis -------------------------
     // Common header to identify this bot's messages.
-    const header = '# DocTagChecker\n\n'
+    const header = `# [DocTagChecker](${projectURL})\n\n`
     // Remove the last comment to avoid spam.
     await deleteLastComment(ghToken, header)
     // Set outputs for other workflow steps to use.

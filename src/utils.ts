@@ -4,6 +4,16 @@ import * as github from '@actions/github'
 import crypto from 'crypto'
 
 /**
+ * Strips all named URLs down to only the name.
+ * '[leName](someURL)' -> 'leName'
+ * @param text The text to strip.
+ * @returns Stripped text
+ */
+export function stripURLs(text: string): string {
+  return text.replace(/\[(.*)\]\(.*\)/g, '$1')
+}
+
+/**
  * Filter function to remove duplicates in an array.
  * @param value Value to check for duplication
  * @param index Known index of first occurrence of value.
