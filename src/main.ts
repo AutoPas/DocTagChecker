@@ -279,6 +279,10 @@ The following doc files are unchanged, but some related sources were changed. Ma
     }
   }
 
+  // Add footer with information about the bot.
+  message += `---\n'
+<sub>[What is this?](https://github.com/AutoPas/DocTagChecker)</sub>`
+
   return message
 }
 

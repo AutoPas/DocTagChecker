@@ -29146,6 +29146,9 @@ The following doc files are unchanged, but some related sources were changed. Ma
             message += `- [ ] [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) (changed: ${tagsToUrls(tags)})\n`;
         }
     }
+    // Add footer with information about the bot.
+    message += `---\n'
+<sub>[What is this?](https://github.com/AutoPas/DocTagChecker)</sub>`;
     return message;
 }
 /**
