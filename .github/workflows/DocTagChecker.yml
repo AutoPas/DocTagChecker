@@ -10,7 +10,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check for missing userdoc updates
-        uses: AutoPas/DocTagChecker@footerMessage
+        # Use the version from the branch that triggered the workflow
+        uses: AutoPas/DocTagChecker@${{ github.head_ref || github.ref_name }}
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           # multiple paths are separated by whitespace or ','
