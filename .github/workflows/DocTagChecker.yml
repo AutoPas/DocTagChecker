@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Debug
+      - name: debug
         run: |
           echo "-----------------------------------"
           echo $BRANCH_NAME
@@ -20,9 +20,10 @@ jobs:
           echo "-----------------------------------"
           echo ${{ github.ref_name }}
           echo "-----------------------------------"
+          ACTION_VERSION=${BRANCH_NAME}
       - name: Check for missing userdoc updates
         # Use the version from the branch that triggered the workflow
-        # uses: AutoPas/DocTagChecker@${{ github.head_ref || github.ref_name }}
+        uses: AutoPas/DocTagChecker@${{ steps.debug.outputs.ACTION_VERSION }}
         uses: AutoPas/DocTagChecker@main
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
