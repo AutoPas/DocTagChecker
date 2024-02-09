@@ -4,8 +4,8 @@ on:
   pull_request
 
 jobs:
-  runs-on: ubuntu-latest
   DocTagCheck:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
