@@ -12,9 +12,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check for missing userdoc updates
-        # Use the version from the branch that triggered the workflow
+        # Use the DocTagChecker version from the branch that triggered the workflow
+        # This is the repo relative path to actions.yml
         uses: ./
-        # uses: AutoPas/DocTagChecker@main
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           # multiple paths are separated by whitespace or ','
