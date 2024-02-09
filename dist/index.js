@@ -29124,7 +29124,7 @@ function buildMessage(unchangedDoc, unknownTags, header) {
     let message = header;
     // If there is nothing to report on, only create s stub.
     if (unchangedDoc.size === 0 && unknownTags.size === 0) {
-        message = `Looks good to me! :shipit:`;
+        message += `Looks good to me! :shipit:\n`;
     }
     else {
         // Add content for unknown tags.
