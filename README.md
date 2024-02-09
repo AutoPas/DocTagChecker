@@ -6,26 +6,32 @@
 [![CodeQL](https://github.com/AutoPas/DocTagChecker/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/AutoPas/DocTagChecker/actions/workflows/codeql-analysis.yml)
 [![Coverage](./badges/coverage.svg)](./badges/coverage.svg)
 
-An GitHub action to help you keep your user documentation up to date with your source code.
+A GitHub action to help you keep your user documentation up to date with your source code.
 
-It works by looking for file or directory tags in your documentation and then checking if these documentation pages are changed if the linked source code is updated.
-Since this is very prone to false-positives it does never fail workflows but instead post status comments to the corresponding pull request.
+It works by looking for file or directory tags in your documentation and then checking if these documentation pages have changed and if the linked source code has been updated.
+Since this is very prone to false positives, it never fails workflows but instead posts status comments to the corresponding pull request.
 
 ## Usage
 
-To use DocTagChecker in your project, you need to include it and adhere to its (very few) assumptions.
+To use DocTagChecker in your project, you must include it and adhere to its (very few) assumptions.
 
 ### Add DocTagChecker to your Workflows
 
 To add this action to your CI copy and adapt the following into your `YAML` workflow file.
 
 ```yaml
+name: DocTagChecker Workflow
+
+on:
+  pull_request  # This action is intended only for PRs
+
 jobs:
   DocTagCheck:
+    runs-on: ubuntu-latest  # this is tested but other runners might work too
     steps:
       - name: Checkout your code
         uses: your/way/to/checkout
-      - name: Check for missing userdoc updates
+      - name: Check for missing user doc updates
         uses: AutoPas/DocTagChecker@main  # substitute main for a release tag
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
@@ -50,7 +56,7 @@ DocTagChecker looks for two kinds of tags in all documentation files:
 
 ## Build and Develop
 
-This GitHub action was created from the [actions/typescrip-action template](https://github.com/actions/typescript-action). Refer to this for general tips, techniques, and guidelines.
+This GitHub action was created from the [actions/typescript-action template](https://github.com/actions/typescript-action). Refer to this for general tips, techniques, and guidelines.
 
 ### Dependencies
 
@@ -76,8 +82,8 @@ The general development workflow should look as follows:
     npm run all
     ```
 
-    This is critical. Without this step the JavaScript code, which is what's actually run, is not built and nothing changes!
-1. Commit, push, review, merge to main.
+    This is critical. Without this step, the JavaScript code, which is what's actually run, is not built, and nothing changes!
+1. Commit, push, review, and merge to main.
 1. (If applicable) Create a new release using the [release script](script/release).
 
     ```bash
