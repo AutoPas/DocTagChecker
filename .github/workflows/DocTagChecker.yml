@@ -24,7 +24,7 @@ jobs:
       - name: Check for missing userdoc updates
         # Use the version from the branch that triggered the workflow
         uses: AutoPas/DocTagChecker@${{ steps.debug.outputs.ACTION_VERSION }}
-        uses: AutoPas/DocTagChecker@main
+        # uses: AutoPas/DocTagChecker@main
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           # multiple paths are separated by whitespace or ','
