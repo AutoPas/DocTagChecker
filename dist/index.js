@@ -29113,12 +29113,6 @@ async function deleteLastComment(ghToken, header) {
  * @return Message as string.
  */
 function buildMessage(unchangedDoc, unknownTags, header) {
-    // If there is nothing to report on, the message stays empty
-    if (unchangedDoc.size === 0 && unknownTags.size === 0) {
-        return '';
-    }
-    // Message starts with the header.
-    let message = header;
     // Local helper function turning a list of tags into named urls to changes.
     const tagsToUrls = (tagList) => {
         return tagList.map((tag) => {
@@ -29126,33 +29120,41 @@ function buildMessage(unchangedDoc, unknownTags, header) {
             return `[${tag}](${(0, utils_1.getUrlToChanges)(filePath)})`;
         });
     };
-    // Add content for unknown tags.
-    if (unknownTags.size !== 0) {
-        message += `## Unknown Tags
+    // Message starts with the header.
+    let message = header;
+    // If there is nothing to report on, only create s stub.
+    if (unchangedDoc.size === 0 && unknownTags.size === 0) {
+        message = `Looks good to me! :shipit:`;
+    }
+    else {
+        // Add content for unknown tags.
+        if (unknownTags.size !== 0) {
+            message += `## Unknown Tags
 The following tags could not be found in the latest revision:
 | DocFile | Unknown Tags |
 |:--------|:------------:|\n`;
-        // Create one table row for each doc file.
-        for (const [docfile, tags] of unknownTags) {
-            // Turn filenames to links.
-            const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
-            // Wrap tags in '`' and add space for readability.
-            const tagsDecorated = tags.map(tag => {
-                return ` \`${tag}\``;
-            });
-            // These tags are unknown so don't try to create links for them.
-            message += `| ${docfileLink} | ${tagsDecorated} |\n`;
+            // Create one table row for each doc file.
+            for (const [docfile, tags] of unknownTags) {
+                // Turn filenames to links.
+                const docfileLink = `[${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)})`;
+                // Wrap tags in '`' and add space for readability.
+                const tagsDecorated = tags.map(tag => {
+                    return ` \`${tag}\``;
+                });
+                // These tags are unknown so don't try to create links for them.
+                message += `| ${docfileLink} | ${tagsDecorated} |\n`;
+            }
+            message += '\n';
         }
-        message += '\n';
-    }
-    // Add content for unchanged documentation.
-    if (unchangedDoc.size !== 0) {
-        message += `## Unchanged Documentation
+        // Add content for unchanged documentation.
+        if (unchangedDoc.size !== 0) {
+            message += `## Unchanged Documentation
 The following doc files are unchanged, but some related sources were changed. Make sure the documentation is up to date!\n\n`;
-        // Create one task for each doc file.
-        for (const [docfile, tags] of unchangedDoc) {
-            // Add links to all filenames.
-            message += `- [ ] [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) (changed: ${tagsToUrls(tags)})\n`;
+            // Create one task for each doc file.
+            for (const [docfile, tags] of unchangedDoc) {
+                // Add links to all filenames.
+                message += `- [ ] [${path.basename(docfile)}](${(0, utils_1.getUrlToFile)(docfile)}) (changed: ${tagsToUrls(tags)})\n`;
+            }
         }
     }
     // Add footer with information about the bot.
@@ -29275,16 +29277,13 @@ async function run() {
         // Set outputs for other workflow steps to use.
         if (unchangedDoc.size === 0 && unknownTags.size === 0) {
             core.setOutput('warnings', 'NO WARNINGS');
-            // Message to signal that the checking actually happened.
-            const message = `${header}Looks good to me! :shipit:`;
-            await postMessage(ghToken, message);
         }
         else {
             core.setOutput('warnings', 'DOC MIGHT NEED UPDATE OR TAGS ARE INVALID');
-            // Add a new comment with the warnings to the PR.
-            const message = buildMessage(unchangedDoc, unknownTags, header);
-            await postMessage(ghToken, message);
         }
+        // Add a new comment with either the warnings or an all-ok to the PR.
+        const message = buildMessage(unchangedDoc, unknownTags, header);
+        await postMessage(ghToken, message);
     }
     catch (error) {
         // Fail the workflow run if an error occurs
