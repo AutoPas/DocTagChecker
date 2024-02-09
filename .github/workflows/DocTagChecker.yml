@@ -6,12 +6,23 @@ on:
 jobs:
   DocTagCheck:
     runs-on: ubuntu-latest
+    env:
+        BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Debug
+        run: |
+          echo "-----------------------------------"
+          echo $BRANCH_NAME
+          echo "-----------------------------------"
+          echo ${{ github.head_ref }}
+          echo "-----------------------------------"
+          echo ${{ github.ref_name }}
+          echo "-----------------------------------"
       - name: Check for missing userdoc updates
         # Use the version from the branch that triggered the workflow
-        uses: AutoPas/DocTagChecker@${{ github.head_ref || github.ref_name }}
+        uses: AutoPas/DocTagChecker@${BRANCH_NAME}
         with: 
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           # multiple paths are separated by whitespace or ','
