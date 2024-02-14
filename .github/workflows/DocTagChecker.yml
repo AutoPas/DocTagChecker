@@ -15,7 +15,7 @@ jobs:
       checks: write
       contents: write
       deployments: write
-      id-tokens: write
+      id-token: write
       discussions: write
       packages: write
       pages: write
