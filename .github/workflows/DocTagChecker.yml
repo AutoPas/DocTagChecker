@@ -17,6 +17,7 @@ jobs:
       checks: write
       packages: write
       repository-projects: write
+      security-events: write
       pull-requests: read
     steps:
       - name: Checkout
