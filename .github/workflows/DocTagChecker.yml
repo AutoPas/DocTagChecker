@@ -13,6 +13,8 @@ jobs:
       issues: write
       discussions: write
       contents: write
+      actions: write
+      checks: write
       pull-requests: read
     steps:
       - name: Checkout
