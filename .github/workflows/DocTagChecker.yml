@@ -11,17 +11,17 @@ jobs:
     # needed to grant workflows opened by dependabot rights to create comments.
     permissions:
       issues: write
-      actions: write
-      checks: write
-      contents: write
-      deployments: write
-      id-token: write
-      discussions: write
-      packages: write
-      pages: write
-      repository-projects: write
-      security-events: write
-      statuses: write
+      # actions: write
+      # checks: write
+      # contents: write
+      # deployments: write
+      # id-token: write
+      # discussions: write
+      # packages: write
+      # pages: write
+      # repository-projects: write
+      # security-events: write
+      # statuses: write
       pull-requests: write
     steps:
       - name: Checkout
