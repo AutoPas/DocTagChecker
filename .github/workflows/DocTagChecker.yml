@@ -8,10 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
         BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
+    # needed to grant workflows opened by dependabot rights to create comments.
     permissions:
-      # needed to grant workflows opened by dependabot rights to create comments.
       issues: write
       discussions: write
+      contents: write
       pull-requests: read
     steps:
       - name: Checkout
