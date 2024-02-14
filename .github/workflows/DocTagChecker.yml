@@ -10,7 +10,7 @@ jobs:
         BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
     # needed to grant workflows opened by dependabot rights to create comments.
     permissions:
-      issues: write
+      # issues: write
       # actions: write
       # checks: write
       # contents: write
