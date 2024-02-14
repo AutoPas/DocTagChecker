@@ -11,6 +11,7 @@ jobs:
     permissions:
       # needed to grant workflows opened by dependabot rights to create comments.
       issues: write
+      discussions: write
       pull-requests: read
     steps:
       - name: Checkout
