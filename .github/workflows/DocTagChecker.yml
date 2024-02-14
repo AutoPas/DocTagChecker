@@ -18,6 +18,7 @@ jobs:
       packages: write
       repository-projects: write
       security-events: write
+      statuses: write
       pull-requests: read
     steps:
       - name: Checkout
